@@ -10,12 +10,9 @@ import {
   Activity,
   Target,
   Zap,
-  Calendar,
   ArrowUpRight,
   ArrowDownRight,
-  Clock,
-  CheckCircle,
-  AlertCircle
+  Clock
 } from 'lucide-react';
 import { useDataStore } from '@/hooks/useDataStore';
 import { useNavigate } from 'react-router-dom';
@@ -55,7 +52,7 @@ function MetricCard({
 
   const ChangeIcon = changeType === 'positive' ? ArrowUpRight :
                    changeType === 'negative' ? ArrowDownRight :
-                   ArrowRight;
+                   ArrowUpRight;
 
   return (
     <Card

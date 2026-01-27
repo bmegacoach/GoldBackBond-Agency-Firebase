@@ -1,10 +1,10 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from './ui/Card';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
 import { Select } from './ui/Select';
 import { Badge } from './ui/Badge';
-import { Search, Plus, Filter, Trash2, Edit2, Settings, Save } from 'lucide-react';
+import { Search, Plus, Filter, Trash2, Edit2, Settings } from 'lucide-react';
 import { LeadFormModal } from './forms/LeadFormModal';
 import { useDataStore } from '@/hooks/useDataStore';
 import { useSchema, DynamicColumn } from '@/hooks/useSchema';
@@ -33,6 +33,7 @@ export function LeadsManager() {
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isPaidMode, setIsPaidMode] = useState(false);
 
   // Dynamic Column State
   const [showColumnCreator, setShowColumnCreator] = useState(false);
@@ -42,7 +43,7 @@ export function LeadsManager() {
   // Use new hooks
   const dataStore = useDataStore<Lead>({ collectionName: 'leads' });
   const schema = useSchema({ collectionName: 'leads' });
-  const { user } = useAuth();
+  const { user: _user } = useAuth();
 
   // Load leads with proper cleanup
   useEffect(() => {
@@ -52,7 +53,7 @@ export function LeadsManager() {
     const loadLeads = async () => {
       try {
         setIsLoading(true);
-        const data = await dataStore.fetchAll();
+        const _data = await dataStore.fetchAll();
         if (isMounted) {
           setIsLoading(false);
         }
@@ -215,8 +216,13 @@ export function LeadsManager() {
           <h1 className="text-3xl font-bold text-gray-900">Leads Manager</h1>
           <p className="text-gray-600 mt-2">
             Manage and track your sales pipeline
-            {dataStore.isPaid ?
-              <Badge variant="success" className="ml-2">Pro Mode</Badge> :
+            {typeof dataStore.isPaid === 'function' ?
+              (async () => {
+                const paid = await dataStore.isPaid();
+                return paid ?
+                  <Badge variant="success" className="ml-2">Pro Mode</Badge> :
+                  <Badge variant="warning" className="ml-2">Demo Mode (Local Storage)</Badge>;
+              })() :
               <Badge variant="warning" className="ml-2">Demo Mode (Local Storage)</Badge>
             }
           </p>
@@ -428,3 +434,4 @@ export function LeadsManager() {
     </div>
   );
 }
+
