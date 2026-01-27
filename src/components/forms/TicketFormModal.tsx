@@ -11,6 +11,7 @@ interface TicketFormModalProps {
   onSubmit: (data: any) => Promise<void>;
   loading: boolean;
   initialData?: any;
+  schema?: any;
 }
 
 export function TicketFormModal({
@@ -19,6 +20,7 @@ export function TicketFormModal({
   onSubmit,
   loading,
   initialData,
+  schema,
 }: TicketFormModalProps) {
   const [formData, setFormData] = useState(
     initialData || {
@@ -160,6 +162,36 @@ export function TicketFormModal({
                 ]}
               />
             </div>
+
+            {/* Dynamic Fields */}
+            {schema?.columns?.map((col: any) => (
+              <div key={col.id}>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {col.label}
+                </label>
+                {col.type === 'date' ? (
+                  <Input
+                    type="date"
+                    value={formData[col.key] || ''}
+                    onChange={(e) => setFormData({ ...formData, [col.key]: e.target.value })}
+                  />
+                ) : col.type === 'number' ? (
+                  <Input
+                    type="number"
+                    placeholder={`Enter ${col.label.toLowerCase()}...`}
+                    value={formData[col.key] || ''}
+                    onChange={(e) => setFormData({ ...formData, [col.key]: e.target.value })}
+                  />
+                ) : (
+                  <Input
+                    type="text"
+                    placeholder={`Enter ${col.label.toLowerCase()}...`}
+                    value={formData[col.key] || ''}
+                    onChange={(e) => setFormData({ ...formData, [col.key]: e.target.value })}
+                  />
+                )}
+              </div>
+            ))}
 
             <div className="flex gap-3 pt-4">
               <Button

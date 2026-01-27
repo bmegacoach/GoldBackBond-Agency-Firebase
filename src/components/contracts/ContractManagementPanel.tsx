@@ -1,10 +1,20 @@
 import React, { useState, useEffect } from 'react';
+// Default columns for the contracts table
+const ALL_COLUMNS = [
+  { key: 'customer', label: 'Customer' },
+  { key: 'title', label: 'Contract Type' },
+  { key: 'amount', label: 'Amount' },
+  { key: 'leverage', label: 'Leverage' },
+  { key: 'status', label: 'Status' },
+  { key: 'created', label: 'Created' },
+  { key: 'actions', label: 'Actions' },
+];
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Badge } from '../ui/Badge';
 import { X, Plus, FileText, Send, CheckCircle, Clock, AlertCircle, Download, Eye } from 'lucide-react';
-import { collection, getDocs, doc, setDoc, updateDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, setDoc, updateDoc, query, orderBy, limit, startAfter, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import { useAuth } from '@/lib/firebase/auth-context';
 
@@ -55,8 +65,19 @@ export function ContractManagementPanel() {
   const { user } = useAuth();
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [loading, setLoading] = useState(true);
+  const [lastDoc, setLastDoc] = useState<any>(null);
+  const [hasMore, setHasMore] = useState(true);
+  const PAGE_SIZE = 10;
+  const [statusFilter, setStatusFilter] = useState<string>(''); // For optional filtering
   const [isCreating, setIsCreating] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<string>('');
+  // Column customization state
+  const [visibleColumns, setVisibleColumns] = useState<string[]>(ALL_COLUMNS.map(col => col.key));
+  const toggleColumn = (key: string) => {
+    setVisibleColumns((cols: string[]) =>
+      cols.includes(key) ? cols.filter((c: string) => c !== key) : [...cols, key]
+    );
+  };
   const [formData, setFormData] = useState({
     customerId: '',
     customerName: '',
@@ -72,29 +93,63 @@ export function ContractManagementPanel() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
+
   useEffect(() => {
     if (user) {
-      loadContracts();
+      loadContracts(true);
     }
-  }, [user]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, statusFilter]);
 
-  const loadContracts = async () => {
+  const loadContracts = async (reset = false) => {
     try {
       setLoading(true);
-      const contractsRef = collection(db, 'contracts');
-      const snapshot = await getDocs(contractsRef);
+      let q = query(
+        collection(db, 'contracts'),
+        orderBy('createdAt', 'desc'),
+        limit(PAGE_SIZE)
+      );
+      if (statusFilter) {
+        q = query(
+          collection(db, 'contracts'),
+          where('status', '==', statusFilter),
+          orderBy('createdAt', 'desc'),
+          limit(PAGE_SIZE)
+        );
+      }
+      if (!reset && lastDoc) {
+        q = query(q, startAfter(lastDoc));
+      }
+      const snapshot = await getDocs(q);
       const contractsData = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
       })) as Contract[];
-      setContracts(contractsData.sort((a, b) => 
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      ));
+      if (reset) {
+        setContracts(contractsData);
+      } else {
+        setContracts(prev => [...prev, ...contractsData]);
+      }
+      setLastDoc(snapshot.docs[snapshot.docs.length - 1] || null);
+      setHasMore(snapshot.docs.length === PAGE_SIZE);
     } catch (err) {
       console.error('Failed to load contracts:', err);
     } finally {
       setLoading(false);
     }
+  };
+  // Pagination: Load more handler
+  const handleLoadMore = () => {
+    if (!loading && hasMore) {
+      loadContracts();
+    }
+  };
+
+  // Optional: Status filter UI handler
+  const handleStatusFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setStatusFilter(e.target.value);
+    setLastDoc(null);
+    setHasMore(true);
   };
 
   const handleGenerateContract = async (e: React.FormEvent) => {
@@ -203,14 +258,27 @@ export function ContractManagementPanel() {
           <h2 className="text-3xl font-bold text-primary-900">Contract Management</h2>
           <p className="text-primary-600 text-sm mt-1">Generate, track, and manage investment contracts</p>
         </div>
-        <Button
-          variant="primary"
-          onClick={() => setIsCreating(!isCreating)}
-          className="flex items-center gap-2"
-        >
-          <Plus className="w-4 h-4" />
-          New Contract
-        </Button>
+        <div className="flex gap-4 items-center">
+          <select
+            className="border border-primary-200 rounded px-2 py-1 text-sm"
+            value={statusFilter}
+            onChange={handleStatusFilterChange}
+          >
+            <option value="">All Statuses</option>
+            <option value="draft">Draft</option>
+            <option value="sent">Sent</option>
+            <option value="signed">Signed</option>
+            <option value="executed">Executed</option>
+          </select>
+          <Button
+            variant="primary"
+            onClick={() => setIsCreating(!isCreating)}
+            className="flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            New Contract
+          </Button>
+        </div>
       </div>
 
       {/* Create Contract Form */}
@@ -425,39 +493,58 @@ export function ContractManagementPanel() {
         </Card>
       </div>
 
-      {/* Contracts Table */}
+      {/* Contracts Table with Column Customization */}
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
           <CardTitle>All Contracts</CardTitle>
+          <div className="flex flex-wrap gap-2 items-center">
+            <span className="text-xs text-primary-500 mr-2">Customize columns:</span>
+            {ALL_COLUMNS.map(col => (
+              <label key={col.key} className="flex items-center gap-1 text-xs cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={visibleColumns.includes(col.key)}
+                  onChange={() => toggleColumn(col.key)}
+                  className="accent-primary-600"
+                />
+                {col.label}
+              </label>
+            ))}
+          </div>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-primary-200">
-                  <th className="text-left py-3 px-4 font-semibold text-primary-700">Customer</th>
-                  <th className="text-left py-3 px-4 font-semibold text-primary-700">Contract Type</th>
-                  <th className="text-left py-3 px-4 font-semibold text-primary-700">Amount</th>
-                  <th className="text-left py-3 px-4 font-semibold text-primary-700">Leverage</th>
-                  <th className="text-left py-3 px-4 font-semibold text-primary-700">Status</th>
-                  <th className="text-left py-3 px-4 font-semibold text-primary-700">Created</th>
-                  <th className="text-left py-3 px-4 font-semibold text-primary-700">Actions</th>
+                  {ALL_COLUMNS.map(col => visibleColumns.includes(col.key) && (
+                    <th key={col.key} className="text-left py-3 px-4 font-semibold text-primary-700">{col.label}</th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
                 {contracts.map(contract => (
-                    <tr key={contract.id} className="border-b border-primary-100 hover:bg-primary-50">
+                  <tr key={contract.id} className="border-b border-primary-100 hover:bg-primary-50">
+                    {visibleColumns.includes('customer') && (
                       <td className="py-4 px-4">
                         <div className="font-semibold text-primary-900">{contract.customerName}</div>
                         <div className="text-primary-600 text-xs">{contract.customerEmail}</div>
                       </td>
+                    )}
+                    {visibleColumns.includes('title') && (
                       <td className="py-4 px-4 text-primary-700">{contract.title}</td>
+                    )}
+                    {visibleColumns.includes('amount') && (
                       <td className="py-4 px-4 text-accent-600 font-semibold">
                         ${(contract.investmentAmount / 1000).toFixed(0)}K
                       </td>
+                    )}
+                    {visibleColumns.includes('leverage') && (
                       <td className="py-4 px-4">
                         <Badge variant="info">{contract.terms.leverage}:1</Badge>
                       </td>
+                    )}
+                    {visibleColumns.includes('status') && (
                       <td className="py-4 px-4">
                         <Badge variant={
                           contract.status === 'draft' ? 'default' :
@@ -468,9 +555,13 @@ export function ContractManagementPanel() {
                           {contract.status.charAt(0).toUpperCase() + contract.status.slice(1)}
                         </Badge>
                       </td>
+                    )}
+                    {visibleColumns.includes('created') && (
                       <td className="py-4 px-4 text-primary-600 text-xs">
                         {new Date(contract.createdAt).toLocaleDateString()}
                       </td>
+                    )}
+                    {visibleColumns.includes('actions') && (
                       <td className="py-4 px-4">
                         <div className="flex gap-2">
                           <button className="p-1 hover:bg-info-100 rounded text-info-600 transition-colors">
@@ -499,15 +590,23 @@ export function ContractManagementPanel() {
                           </button>
                         </div>
                       </td>
-                    </tr>
+                    )}
+                  </tr>
                 ))}
               </tbody>
             </table>
-            {contracts.length === 0 && (
+            {contracts.length === 0 && !loading && (
               <div className="text-center py-12">
                 <FileText className="w-12 h-12 text-primary-200 mx-auto mb-4" />
                 <p className="text-primary-600 font-medium">No contracts yet</p>
                 <p className="text-primary-400 text-sm">Create your first contract using the button above</p>
+              </div>
+            )}
+            {hasMore && contracts.length > 0 && (
+              <div className="flex justify-center py-4">
+                <Button onClick={handleLoadMore} disabled={loading} variant="secondary">
+                  {loading ? 'Loading...' : 'Load More'}
+                </Button>
               </div>
             )}
           </div>

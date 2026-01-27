@@ -4,6 +4,7 @@ import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
 import { X } from 'lucide-react';
+import { DynamicColumn } from '@/hooks/useSchema';
 
 interface CustomerFormModalProps {
   isOpen: boolean;
@@ -11,6 +12,7 @@ interface CustomerFormModalProps {
   onSubmit: (data: any) => Promise<void>;
   loading: boolean;
   initialData?: any;
+  dynamicColumns?: DynamicColumn[];
 }
 
 export function CustomerFormModal({
@@ -19,6 +21,7 @@ export function CustomerFormModal({
   onSubmit,
   loading,
   initialData,
+  dynamicColumns = []
 }: CustomerFormModalProps) {
   const [formData, setFormData] = useState(
     initialData || {
@@ -204,6 +207,27 @@ export function CustomerFormModal({
                 />
               </div>
             </div>
+
+            {/* Dynamic Fields */}
+            {dynamicColumns.length > 0 && (
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900">Custom Fields</h3>
+                <div className="grid grid-cols-1 gap-4">
+                  {dynamicColumns.map((col) => (
+                    <div key={col.id} className="space-y-2">
+                      <label className="block text-sm font-medium text-gray-700">
+                        {col.label}
+                      </label>
+                      <Input
+                        type={col.type === 'phone' ? 'tel' : col.type}
+                        value={formData[col.key] || ''}
+                        onChange={(e) => setFormData({ ...formData, [col.key]: e.target.value })}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="flex gap-3 pt-4">
               <Button

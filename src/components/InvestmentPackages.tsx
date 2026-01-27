@@ -2,8 +2,11 @@ import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from './ui/Card';
 import { Button } from './ui/Button';
 import { Badge } from './ui/Badge';
-import { Plus, Edit2, Trash2 } from 'lucide-react';
+import { Plus, Edit2, Settings } from 'lucide-react';
 import { useDataStore } from '@/hooks/useDataStore';
+import { useSchema, DynamicColumn } from '@/hooks/useSchema';
+import { Input } from './ui/Input';
+import { Select } from './ui/Select';
 import { InvestmentPackageModal } from './forms/InvestmentPackageModal';
 
 interface Package {
@@ -17,15 +20,23 @@ interface Package {
   features?: string[];
   createdAt?: Date;
   updatedAt?: Date;
+  [key: string]: any; // Index signature for dynamic fields
 }
 
 export function InvestmentPackages() {
   const [packages, setPackages] = useState<Package[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPackage, setEditingPackage] = useState<Package | null>(null);
+  // ...existing code...
+
+  // Dynamic Column State
+  const [showColumnCreator, setShowColumnCreator] = useState(false);
+  const [newColName, setNewColName] = useState('');
+  const [newColType, setNewColType] = useState<DynamicColumn['type']>('text');
 
   // Use hybrid data store
   const dataStore = useDataStore<Package>({ collectionName: 'packages' });
+  const schema = useSchema({ collectionName: 'packages' });
 
   useEffect(() => {
     loadPackages();
@@ -87,6 +98,38 @@ export function InvestmentPackages() {
     return 'bg-orange-50 border-orange-200';
   };
 
+  // Schema management with validation
+  const handleAddColumn = () => {
+    if (!newColName.trim()) {
+      // ...existing code...
+      return;
+    }
+    
+    // Check for duplicates
+    const exists = schema.columns.some(col => col.label.toLowerCase() === newColName.trim().toLowerCase());
+    if (exists) {
+      // ...existing code...
+      return;
+    }
+    
+    // Check for reserved field names
+    const reserved = ['id', 'name', 'minInvestment', 'interestRate', 'duration', 'description', 'allocation', 'features', 'createdAt', 'updatedAt'];
+    if (reserved.includes(newColName.trim())) {
+      // ...existing code...
+      return;
+    }
+    
+    schema.addColumn({
+      label: newColName,
+      type: newColType,
+    });
+    setNewColName('');
+    setShowColumnCreator(false);
+    // ...existing code...
+  };
+
+  // ...existing code...
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -97,11 +140,46 @@ export function InvestmentPackages() {
             <Badge variant="warning" className="ml-2">Demo Mode</Badge>
           </p>
         </div>
-        <Button variant="primary" size="lg" onClick={handleCreate}>
-          <Plus className="w-5 h-5 mr-2" />
-          Create Package
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setShowColumnCreator(!showColumnCreator)}>
+            <Settings className="w-4 h-4 mr-2" />
+            {showColumnCreator ? 'Cancel' : 'Customize Columns'}
+          </Button>
+          <Button variant="primary" size="lg" onClick={handleCreate}>
+            <Plus className="w-5 h-5 mr-2" />
+            Create Package
+          </Button>
+        </div>
       </div>
+
+      {/* Column Creator UI */}
+      {showColumnCreator && (
+        <Card className="bg-gray-50 border-dashed">
+          <CardContent className="py-4 flex items-end gap-4">
+            <div className="flex-1">
+              <label className="text-sm font-medium mb-1 block">Column Name</label>
+              <Input value={newColName} onChange={(e) => setNewColName(e.target.value)} placeholder="e.g. Category, Tags..." />
+            </div>
+            <div className="w-48">
+              <label className="text-sm font-medium mb-1 block">Type</label>
+              <Select
+                options={[
+                  { label: 'Text', value: 'text' },
+                  { label: 'Number', value: 'number' },
+                  { label: 'Date', value: 'date' },
+                  { label: 'Email', value: 'email' },
+                  { label: 'Phone', value: 'phone' },
+                ]}
+                value={newColType}
+                onChange={(e) => setNewColType(e.target.value as any)}
+              />
+            </div>
+            <Button onClick={handleAddColumn} disabled={!newColName}>
+              <Plus className="w-4 h-4 mr-2" /> Add Field
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Packages Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -119,6 +197,12 @@ export function InvestmentPackages() {
                 <Badge variant="info">{pkg.interestRate}% APY</Badge>
               </div>
               <p className="text-sm text-gray-600 mt-2">{pkg.description || 'No description provided.'}</p>
+              {/* Dynamic Fields */}
+              <div className="flex gap-4 text-sm text-gray-600">
+                {schema.columns.map(col => (
+                  <span key={col.id}>• {col.label}: {pkg[col.key] || '-'}</span>
+                ))}
+              </div>
             </CardHeader>
 
             <CardContent className="space-y-4">
@@ -171,7 +255,7 @@ export function InvestmentPackages() {
                   <Edit2 className="w-4 h-4 mr-2" /> Edit
                 </Button>
                 <Button variant="danger" className="flex-1" onClick={() => pkg.id && handleDelete(pkg.id)}>
-                  <Trash2 className="w-4 h-4 mr-2" /> Delete
+                  Delete
                 </Button>
               </div>
             </CardContent>
@@ -185,6 +269,7 @@ export function InvestmentPackages() {
         onSubmit={handleSubmit}
         loading={dataStore.loading}
         initialData={editingPackage}
+        schema={schema}
       />
     </div>
   );

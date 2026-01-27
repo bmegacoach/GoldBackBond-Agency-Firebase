@@ -4,9 +4,10 @@ import { Button } from './ui/Button';
 import { Input } from './ui/Input';
 import { Select } from './ui/Select';
 import { Badge } from './ui/Badge';
-import { Plus, Search, Trash2, Edit2 } from 'lucide-react';
+import { Plus, Search, Trash2, Edit2, Settings } from 'lucide-react';
 import { CustomerFormModal } from './forms/CustomerFormModal';
 import { useFirebaseForm } from '@/hooks/useFirebaseForm';
+import { useSchema, DynamicColumn } from '@/hooks/useSchema';
 
 interface Customer {
   id?: string;
@@ -29,8 +30,15 @@ export function CustomersManager() {
   const [tierFilter, setTierFilter] = useState('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
+  // ...existing code...
+
+  // Dynamic Column State
+  const [showColumnCreator, setShowColumnCreator] = useState(false);
+  const [newColName, setNewColName] = useState('');
+  const [newColType, setNewColType] = useState<DynamicColumn['type']>('text');
 
   const firebase = useFirebaseForm<Customer>({ collectionName: 'customers' });
+  const schema = useSchema({ collectionName: 'customers' });
 
   useEffect(() => {
     loadCustomers();
@@ -81,6 +89,29 @@ export function CustomersManager() {
     setIsModalOpen(true);
   };
 
+  // Schema management with validation
+  const handleAddColumn = () => {
+    if (!newColName.trim()) return;
+    
+    // Check for duplicates
+    const exists = schema.columns.some(col => col.label.toLowerCase() === newColName.trim().toLowerCase());
+    if (exists) return;
+    
+    // Check for reserved field names
+    const reserved = ['id', 'firstName', 'lastName', 'email', 'phone', 'company', 'status', 'tier', 'initialInvestment', 'createdAt', 'updatedAt'];
+    if (reserved.includes(newColName.trim())) return;
+    
+    schema.addColumn({
+      label: newColName,
+      type: newColType,
+    });
+    setNewColName('');
+    setShowColumnCreator(false);
+    // ...existing code...
+  };
+
+  // ...existing code...
+
   const filteredCustomers = customers.filter((customer) => {
     const matchesSearch =
       customer.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -113,13 +144,51 @@ export function CustomersManager() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Customers</h1>
-          <p className="text-gray-600 mt-2">Manage customer accounts and portfolios</p>
+          <p className="text-gray-600 mt-2">
+            Manage customer accounts and portfolios
+            <Badge variant="warning" className="ml-2">Demo Mode (Local Storage)</Badge>
+          </p>
         </div>
-        <Button variant="primary" size="lg" onClick={handleNewCustomer}>
-          <Plus className="w-5 h-5 mr-2" />
-          New Customer
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setShowColumnCreator(!showColumnCreator)}>
+            <Settings className="w-4 h-4 mr-2" />
+            {showColumnCreator ? 'Cancel' : 'Customize Columns'}
+          </Button>
+          <Button variant="primary" size="lg" onClick={handleNewCustomer}>
+            <Plus className="w-5 h-5 mr-2" />
+            New Customer
+          </Button>
+        </div>
       </div>
+
+      {/* Column Creator UI */}
+      {showColumnCreator && (
+        <Card className="bg-gray-50 border-dashed">
+          <CardContent className="py-4 flex items-end gap-4">
+            <div className="flex-1">
+              <label className="text-sm font-medium mb-1 block">Column Name</label>
+              <Input value={newColName} onChange={(e) => setNewColName(e.target.value)} placeholder="e.g. Birthday, Region..." />
+            </div>
+            <div className="w-48">
+              <label className="text-sm font-medium mb-1 block">Type</label>
+              <Select
+                options={[
+                  { label: 'Text', value: 'text' },
+                  { label: 'Number', value: 'number' },
+                  { label: 'Date', value: 'date' },
+                  { label: 'Email', value: 'email' },
+                  { label: 'Phone', value: 'phone' },
+                ]}
+                value={newColType}
+                onChange={(e) => setNewColType(e.target.value as any)}
+              />
+            </div>
+            <Button onClick={handleAddColumn} disabled={!newColName}>
+              <Plus className="w-4 h-4 mr-2" /> Add Field
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -261,10 +330,12 @@ export function CustomersManager() {
         onClose={() => {
           setIsModalOpen(false);
           setEditingCustomer(null);
+          // ...existing code...
         }}
         onSubmit={handleSubmit}
         loading={firebase.loading}
         initialData={editingCustomer}
+        dynamicColumns={schema.columns}
       />
     </div>
   );

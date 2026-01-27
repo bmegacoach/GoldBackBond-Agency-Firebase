@@ -2,8 +2,11 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent } from './ui/Card';
 import { Button } from './ui/Button';
 import { Badge } from './ui/Badge';
-import { Plus, Trash2, Edit2 } from 'lucide-react';
+import { Plus, Edit2, Settings } from 'lucide-react';
 import { useFirebaseForm } from '@/hooks/useFirebaseForm';
+import { useSchema, DynamicColumn } from '@/hooks/useSchema';
+import { Input } from './ui/Input';
+import { Select } from './ui/Select';
 import { WorkflowFormModal } from './forms/WorkflowFormModal';
 
 interface Workflow {
@@ -13,6 +16,7 @@ interface Workflow {
   status: 'active' | 'inactive';
   createdAt?: Date;
   updatedAt?: Date;
+  [key: string]: any; // Index signature for dynamic fields
 }
 
 export function WorkflowsManager() {
@@ -21,7 +25,15 @@ export function WorkflowsManager() {
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // ...existing code...
+
+  // Dynamic Column State
+  const [showColumnCreator, setShowColumnCreator] = useState(false);
+  const [newColName, setNewColName] = useState('');
+  const [newColType, setNewColType] = useState<DynamicColumn['type']>('text');
+
   const firebase = useFirebaseForm<Workflow>({ collectionName: 'workflows' });
+  const schema = useSchema({ collectionName: 'workflows' });
 
   useEffect(() => {
     loadWorkflows();
@@ -115,6 +127,38 @@ export function WorkflowsManager() {
     );
   }
 
+  // Schema management with validation
+  const handleAddColumn = () => {
+    if (!newColName.trim()) {
+      // ...existing code...
+      return;
+    }
+    
+    // Check for duplicates
+    const exists = schema.columns.some(col => col.label.toLowerCase() === newColName.trim().toLowerCase());
+    if (exists) {
+      // ...existing code...
+      return;
+    }
+    
+    // Check for reserved field names
+    const reserved = ['id', 'name', 'description', 'status', 'createdAt', 'updatedAt'];
+    if (reserved.includes(newColName.trim())) {
+      // ...existing code...
+      return;
+    }
+    
+    schema.addColumn({
+      label: newColName,
+      type: newColType,
+    });
+    setNewColName('');
+    setShowColumnCreator(false);
+    // ...existing code...
+  };
+
+  // ...existing code...
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -122,11 +166,46 @@ export function WorkflowsManager() {
           <h1 className="text-3xl font-bold text-gray-900">Workflows</h1>
           <p className="text-gray-600 mt-2">Manage automated workflows and processes</p>
         </div>
-        <Button variant="primary" size="lg" onClick={handleOpenCreate}>
-          <Plus className="w-5 h-5 mr-2" />
-          Create Workflow
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setShowColumnCreator(!showColumnCreator)}>
+            <Settings className="w-4 h-4 mr-2" />
+            {showColumnCreator ? 'Cancel' : 'Customize Columns'}
+          </Button>
+          <Button variant="primary" size="lg" onClick={handleOpenCreate}>
+            <Plus className="w-5 h-5 mr-2" />
+            Create Workflow
+          </Button>
+        </div>
       </div>
+
+      {/* Column Creator UI */}
+      {showColumnCreator && (
+        <Card className="bg-gray-50 border-dashed">
+          <CardContent className="py-4 flex items-end gap-4">
+            <div className="flex-1">
+              <label className="text-sm font-medium mb-1 block">Column Name</label>
+              <Input value={newColName} onChange={(e) => setNewColName(e.target.value)} placeholder="e.g. Category, Tags..." />
+            </div>
+            <div className="w-48">
+              <label className="text-sm font-medium mb-1 block">Type</label>
+              <Select
+                options={[
+                  { label: 'Text', value: 'text' },
+                  { label: 'Number', value: 'number' },
+                  { label: 'Date', value: 'date' },
+                  { label: 'Email', value: 'email' },
+                  { label: 'Phone', value: 'phone' },
+                ]}
+                value={newColType}
+                onChange={(e) => setNewColType(e.target.value as any)}
+              />
+            </div>
+            <Button onClick={handleAddColumn} disabled={!newColName}>
+              <Plus className="w-4 h-4 mr-2" /> Add Field
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="space-y-4">
         {workflows.length === 0 ? (
@@ -148,6 +227,12 @@ export function WorkflowsManager() {
                       </Badge>
                     </div>
                     <p className="text-gray-600 text-sm">{workflow.description}</p>
+                    {/* Dynamic Fields */}
+                    <div className="mt-2 flex gap-4 text-sm text-gray-600">
+                      {schema.columns.map(col => (
+                        <span key={col.id}>• {col.label}: {workflow[col.key] || '-'}</span>
+                      ))}
+                    </div>
                   </div>
                   <div className="flex gap-2">
                     <Button
@@ -162,7 +247,7 @@ export function WorkflowsManager() {
                       size="sm"
                       onClick={() => workflow.id && handleDelete(workflow.id)}
                     >
-                      <Trash2 className="w-4 h-4" />
+                      Delete
                     </Button>
                   </div>
                 </div>
@@ -178,6 +263,7 @@ export function WorkflowsManager() {
         onSubmit={handleSubmitForm}
         initialData={editingWorkflow}
         isLoading={isSubmitting}
+        schema={schema}
       />
     </div>
   );

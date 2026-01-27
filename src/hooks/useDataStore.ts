@@ -96,22 +96,33 @@ export function useDataStore<T extends { id?: string, createdAt?: any, updatedAt
 
     // --- Local Storage Adapter ---
     const getLocalStorageKey = () => `crm_data_${options.collectionName}`;
+    const DEMO_MODE_LIMIT = parseInt(import.meta.env.VITE_DEMO_MODE_LIMIT || '50');
+
+    const checkDemoLimits = (items: any[]) => {
+        if (items.length >= DEMO_MODE_LIMIT) {
+            throw new Error(`Demo mode limit reached (${DEMO_MODE_LIMIT} records). Upgrade to add more.`);
+        }
+    };
 
     const localCreate = async (data: Omit<T, 'id'>) => {
         const key = getLocalStorageKey();
         const stored = localStorage.getItem(key);
         const items = stored ? JSON.parse(stored) : [];
+        
+        // Check demo mode limits
+        checkDemoLimits(items);
 
         const newItem = {
             ...data,
             id: 'local_' + Date.now().toString(36) + Math.random().toString(36).substr(2),
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
+            _demoMode: true, // Mark as demo mode data
         };
 
         items.push(newItem);
         localStorage.setItem(key, JSON.stringify(items));
-        return newItem as T;
+        return newItem as unknown as T;
     };
 
     const localUpdate = async (id: string, data: Partial<T>) => {
@@ -130,7 +141,7 @@ export function useDataStore<T extends { id?: string, createdAt?: any, updatedAt
 
         items[index] = updatedItem;
         localStorage.setItem(key, JSON.stringify(items));
-        return updatedItem as T;
+        return updatedItem as unknown as T;
     };
 
     const localRemove = async (id: string) => {
@@ -169,7 +180,7 @@ export function useDataStore<T extends { id?: string, createdAt?: any, updatedAt
             timeoutPromise
         ]);
 
-        return { id: docRef.id, ...data } as T;
+        return { id: docRef.id, ...data } as unknown as T;
     };
 
     const firebaseUpdate = async (id: string, data: Partial<T>) => {
@@ -177,7 +188,7 @@ export function useDataStore<T extends { id?: string, createdAt?: any, updatedAt
             ...data,
             updatedAt: new Date(),
         });
-        return { id, ...data } as T;
+        return { id, ...data } as unknown as T;
     };
 
     const firebaseRemove = async (id: string) => {
@@ -202,7 +213,7 @@ export function useDataStore<T extends { id?: string, createdAt?: any, updatedAt
             ...docSnap.data(),
             createdAt: docSnap.data()?.createdAt?.toDate?.() || docSnap.data()?.createdAt,
             updatedAt: docSnap.data()?.updatedAt?.toDate?.() || docSnap.data()?.updatedAt,
-        } as T;
+        } as unknown as T;
     };
 
     // --- Optimistic Updates and State Management ---

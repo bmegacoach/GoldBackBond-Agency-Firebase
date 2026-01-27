@@ -4,6 +4,7 @@ import { Button } from '../ui/Button';
 import { X } from 'lucide-react';
 
 interface WorkflowFormData {
+  [key: string]: any;
   name: string;
   description: string;
   status: 'active' | 'inactive';
@@ -15,6 +16,7 @@ interface WorkflowFormModalProps {
   onSubmit: (data: WorkflowFormData) => Promise<void>;
   initialData?: WorkflowFormData;
   isLoading?: boolean;
+  schema?: any;
 }
 
 export function WorkflowFormModal({
@@ -23,6 +25,7 @@ export function WorkflowFormModal({
   onSubmit,
   initialData,
   isLoading = false,
+  schema,
 }: WorkflowFormModalProps) {
   const [formData, setFormData] = useState<WorkflowFormData>({
     name: '',
@@ -110,6 +113,39 @@ export function WorkflowFormModal({
                 <option value="inactive">Inactive</option>
               </select>
             </div>
+
+            {/* Dynamic Fields */}
+            {schema?.columns?.map((col: any) => (
+              <div key={col.id}>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {col.label}
+                </label>
+                {col.type === 'date' ? (
+                  <input
+                    type="date"
+                    value={formData[col.key] || ''}
+                    onChange={(e) => setFormData({ ...formData, [col.key]: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  />
+                ) : col.type === 'number' ? (
+                  <input
+                    type="number"
+                    placeholder={`Enter ${col.label.toLowerCase()}...`}
+                    value={formData[col.key] || ''}
+                    onChange={(e) => setFormData({ ...formData, [col.key]: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  />
+                ) : (
+                  <input
+                    type="text"
+                    placeholder={`Enter ${col.label.toLowerCase()}...`}
+                    value={formData[col.key] || ''}
+                    onChange={(e) => setFormData({ ...formData, [col.key]: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  />
+                )}
+              </div>
+            ))}
 
             <div className="flex gap-2 pt-4 border-t border-gray-200">
               <Button
