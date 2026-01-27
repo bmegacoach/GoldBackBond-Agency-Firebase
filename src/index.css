@@ -1,0 +1,74 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-slate-50 text-slate-900 font-sans antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: 'Outfit', sans-serif;
+    @apply font-bold tracking-tight text-slate-900;
+  }
+}
+
+@layer components {
+  .transition-smooth {
+    @apply transition-all duration-300 ease-in-out;
+  }
+
+  .btn-base {
+    @apply inline-flex items-center justify-center px-5 py-2.5 rounded-xl font-medium transition-all duration-300 transform active:scale-95 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-primary {
+    @apply btn-base bg-gradient-to-r from-primary-900 to-primary-700 text-white shadow-lg shadow-primary-900/20 hover:shadow-primary-900/40 hover:to-primary-800 border-0;
+  }
+
+  .btn-secondary {
+    @apply btn-base bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300 shadow-sm hover:shadow-md;
+  }
+
+  .btn-gold {
+    @apply btn-base bg-gradient-to-r from-gold-400 to-gold-600 text-white shadow-lg shadow-gold-500/20 hover:shadow-gold-500/40 hover:brightness-105 border-0;
+  }
+
+  /* Enhanced Card Design */
+  .card {
+    @apply bg-white rounded-2xl border border-slate-100 shadow-premium hover:shadow-premium-hover transition-all duration-300;
+  }
+
+  .glass-panel {
+    @apply bg-white/70 backdrop-blur-2xl border border-white/40 shadow-glass;
+  }
+
+  .input-field {
+    @apply w-full rounded-xl border-slate-200 bg-slate-50/50 px-4 py-3 text-sm transition-all duration-200 focus:bg-white focus:border-primary-500 focus:ring-2 focus:ring-primary-100 placeholder:text-slate-400;
+  }
+}
+
+@layer utilities {
+  .shadow-premium {
+    box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05), 0 0 3px rgba(0, 0, 0, 0.02);
+  }
+
+  .shadow-premium-hover {
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 0 5px rgba(0, 0, 0, 0.03);
+  }
+
+  .text-gradient-primary {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary-900 to-primary-600;
+  }
+
+  .text-gradient-gold {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-gold-500 to-gold-700;
+  }
+}

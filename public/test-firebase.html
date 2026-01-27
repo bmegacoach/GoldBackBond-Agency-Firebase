@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Test</title>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
+    <style>
+        body {
+            font-family: monospace;
+            background: #f5f5f5;
+            padding: 20px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .section {
+            background: white;
+            padding: 20px;
+            margin: 10px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h2 {
+            margin-top: 0;
+            color: #333;
+        }
+        button {
+            background: #1f2937;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #111827;
+        }
+        .log {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 5px 0;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+    </style>
+</head>
+<body>
+    <h1>Firebase Diagnostic Test</h1>
+
+    <div class="section">
+        <h2>1. Firebase Configuration</h2>
+        <button onclick="testConfig()">Test Configuration</button>
+        <div class="log" id="configLog"></div>
+    </div>
+
+    <div class="section">
+        <h2>2. Authentication</h2>
+        <button onclick="testAuth()">Check Current User</button>
+        <button onclick="loginTest()">Test Login (awansaad6927@gmail.com)</button>
+        <div class="log" id="authLog"></div>
+    </div>
+
+    <div class="section">
+        <h2>3. Firestore Connection</h2>
+        <button onclick="testFirestore()">Test Connection</button>
+        <button onclick="testWrite()">Test Write to Firestore</button>
+        <button onclick="testRead()">Test Read from Firestore</button>
+        <div class="log" id="firestoreLog"></div>
+    </div>
+
+    <div class="section">
+        <h2>4. Quick Test</h2>
+        <button onclick="fullTest()">Run Full Diagnostic</button>
+        <div class="log" id="fullLog"></div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCf_0LhRzrrl7Az7XsLRwvQfpzOpG1K5OA",
+            authDomain: "goldbackbond-agency.firebaseapp.com",
+            projectId: "goldbackbond-agency",
+            storageBucket: "goldbackbond-agency.firebasestorage.app",
+            messagingSenderId: "598833726738",
+            appId: "1:598833726738:web:27e47d742eb87cbe3f1fcb",
+            databaseURL: "https://goldbackbond-agency-default-rtdb.firebaseio.com"
+        };
+
+        let app, auth, db;
+        
+        function log(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            const timestamp = new Date().toLocaleTimeString();
+            const color = type === 'error' ? 'red' : type === 'success' ? 'green' : 'blue';
+            element.innerHTML += `<div style="color: ${color};">[${timestamp}] ${message}</div>`;
+            console.log(message);
+        }
+
+        async function testConfig() {
+            log('configLog', '🔧 Testing configuration...', 'info');
+            try {
+                app = firebase.initializeApp(firebaseConfig);
+                auth = firebase.auth();
+                db = firebase.firestore();
+                log('configLog', '✅ Firebase initialized successfully', 'success');
+                log('configLog', `Project ID: ${firebaseConfig.projectId}`, 'success');
+                log('configLog', `Auth Domain: ${firebaseConfig.authDomain}`, 'success');
+            } catch (err) {
+                log('configLog', `❌ Error: ${err.message}`, 'error');
+            }
+        }
+
+        async function testAuth() {
+            log('authLog', '🔐 Checking current user...', 'info');
+            try {
+                if (!auth) {
+                    testConfig();
+                }
+                const user = firebase.auth().currentUser;
+                if (user) {
+                    log('authLog', `✅ Logged in as: ${user.email}`, 'success');
+                    log('authLog', `UID: ${user.uid}`, 'success');
+                    const token = await user.getIdToken();
+                    log('authLog', `✅ Auth token obtained (${token.substring(0, 50)}...)`, 'success');
+                } else {
+                    log('authLog', '⚠️ No user currently logged in', 'info');
+                }
+            } catch (err) {
+                log('authLog', `❌ Error: ${err.message}`, 'error');
+            }
+        }
+
+        async function loginTest() {
+            log('authLog', '🔄 Attempting login...', 'info');
+            try {
+                if (!auth) {
+                    testConfig();
+                }
+                // Note: Don't actually login without password - just check if email exists
+                const methods = await firebase.auth().fetchSignInMethodsForEmail('awansaad6927@gmail.com');
+                log('authLog', `Sign-in methods available: ${methods.join(', ')}`, 'success');
+            } catch (err) {
+                log('authLog', `❌ Error: ${err.message}`, 'error');
+            }
+        }
+
+        async function testFirestore() {
+            log('firestoreLog', '🔌 Testing Firestore connection...', 'info');
+            try {
+                if (!db) {
+                    testConfig();
+                }
+                const doc = await firebase.firestore().collection('_test').doc('connection').get();
+                log('firestoreLog', '✅ Firestore connection successful', 'success');
+            } catch (err) {
+                log('firestoreLog', `❌ Connection error: ${err.message}`, 'error');
+                log('firestoreLog', `Error code: ${err.code}`, 'error');
+            }
+        }
+
+        async function testWrite() {
+            log('firestoreLog', '✍️ Attempting to write test document...', 'info');
+            try {
+                if (!db) {
+                    testConfig();
+                }
+                const user = firebase.auth().currentUser;
+                if (!user) {
+                    log('firestoreLog', '❌ Not authenticated - cannot write', 'error');
+                    return;
+                }
+
+                const testData = {
+                    test: true,
+                    timestamp: new Date(),
+                    email: user.email,
+                    uid: user.uid
+                };
+
+                const docRef = await firebase.firestore()
+                    .collection('leads')
+                    .add(testData);
+                
+                log('firestoreLog', `✅ Write successful!`, 'success');
+                log('firestoreLog', `Document ID: ${docRef.id}`, 'success');
+            } catch (err) {
+                log('firestoreLog', `❌ Write failed: ${err.message}`, 'error');
+                log('firestoreLog', `Error code: ${err.code}`, 'error');
+            }
+        }
+
+        async function testRead() {
+            log('firestoreLog', '📖 Attempting to read from leads collection...', 'info');
+            try {
+                if (!db) {
+                    testConfig();
+                }
+                const user = firebase.auth().currentUser;
+                if (!user) {
+                    log('firestoreLog', '❌ Not authenticated - cannot read', 'error');
+                    return;
+                }
+
+                const snapshot = await firebase.firestore()
+                    .collection('leads')
+                    .limit(5)
+                    .get();
+                
+                log('firestoreLog', `✅ Read successful!`, 'success');
+                log('firestoreLog', `Found ${snapshot.size} documents`, 'success');
+                snapshot.forEach(doc => {
+                    log('firestoreLog', `- ${doc.id}`, 'info');
+                });
+            } catch (err) {
+                log('firestoreLog', `❌ Read failed: ${err.message}`, 'error');
+                log('firestoreLog', `Error code: ${err.code}`, 'error');
+            }
+        }
+
+        async function fullTest() {
+            log('fullLog', '🚀 Starting full diagnostic...', 'info');
+            await testConfig();
+            await new Promise(r => setTimeout(r, 500));
+            await testAuth();
+            await new Promise(r => setTimeout(r, 500));
+            await testFirestore();
+            log('fullLog', '✅ Full diagnostic complete', 'success');
+        }
+    </script>
+</body>
+</html>

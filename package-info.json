@@ -1,0 +1,11 @@
+{
+  "name": "goldbackbond",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Goldbackbond Agency CRM Platform",
+  "main": "index.html",
+  "keywords": ["crm", "agency", "firebase", "react", "vite"],
+  "author": "Development Team",
+  "license": "UNLICENSED"
+}

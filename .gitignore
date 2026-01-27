@@ -1,0 +1,12 @@
+dist
+node_modules
+.DS_Store
+*.local
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.env.local.backup
+firebase-service-account.json
+.env.local
