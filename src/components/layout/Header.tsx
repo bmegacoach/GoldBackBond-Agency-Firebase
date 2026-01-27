@@ -1,5 +1,4 @@
-import { Bell, Search, User, Menu } from 'lucide-react';
-import { Button } from '../ui/Button';
+import { Bell, Search, Menu } from 'lucide-react';
 
 interface HeaderProps {
   toggleSidebar: () => void;

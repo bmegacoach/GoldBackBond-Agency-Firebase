@@ -3,12 +3,15 @@ import React from 'react';
 interface CardProps {
   children: React.ReactNode;
   className?: string;
-  noPadding?: boolean;
+  onClick?: () => void;
 }
 
-export function Card({ children, className = '', noPadding = false }: CardProps) {
+export function Card({ children, className = '', onClick }: CardProps) {
   return (
-    <div className={`bg-white rounded-2xl border border-slate-100 shadow-xl shadow-slate-200/50 transition-all duration-300 hover:shadow-2xl hover:shadow-slate-200/60 ${className}`}>
+    <div 
+      className={`bg-white rounded-2xl border border-slate-100 shadow-xl shadow-slate-200/50 transition-all duration-300 hover:shadow-2xl hover:shadow-slate-200/60 ${className}`}
+      onClick={onClick}
+    >
       {children}
     </div>
   );

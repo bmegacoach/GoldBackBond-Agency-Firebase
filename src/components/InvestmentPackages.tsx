@@ -94,10 +94,7 @@ export function InvestmentPackages() {
           <h1 className="text-3xl font-bold text-gray-900">Investment Packages</h1>
           <p className="text-gray-600 mt-2">
             Browse and manage investment offerings
-            {dataStore.isPaid ?
-              <Badge variant="success" className="ml-2">Pro Mode</Badge> :
-              <Badge variant="warning" className="ml-2">Demo Mode</Badge>
-            }
+            <Badge variant="warning" className="ml-2">Demo Mode</Badge>
           </p>
         </div>
         <Button variant="primary" size="lg" onClick={handleCreate}>
@@ -173,7 +170,7 @@ export function InvestmentPackages() {
                 <Button variant="outline" className="flex-1" onClick={() => handleEdit(pkg)}>
                   <Edit2 className="w-4 h-4 mr-2" /> Edit
                 </Button>
-                <Button variant="destructive" className="flex-1" onClick={() => pkg.id && handleDelete(pkg.id)}>
+                <Button variant="danger" className="flex-1" onClick={() => pkg.id && handleDelete(pkg.id)}>
                   <Trash2 className="w-4 h-4 mr-2" /> Delete
                 </Button>
               </div>

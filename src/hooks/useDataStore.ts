@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
     collection,
     addDoc,
@@ -37,7 +37,7 @@ const isPaidUser = async (): Promise<boolean> => {
 };
 
 // Helper to migrate data from localStorage to Firebase
-const migrateLocalToFirebase = async <T extends { id?: string }>(
+const migrateLocalToFirebase = async <_T extends { id?: string }>(
     collectionName: string
 ): Promise<number> => {
     const key = `crm_data_${collectionName}`;

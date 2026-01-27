@@ -142,8 +142,7 @@ export function LandingPage() {
               size="lg"
               variant="outline"
               onClick={() => {
-                const user = window?.firebaseAuth?.currentUser || undefined;
-                redirectToStripeLink(user?.email);
+                redirectToStripeLink();
               }}
               className="text-lg px-8 py-6 border-slate-700 text-slate-300 hover:bg-white/5 hover:text-white"
             >
@@ -175,9 +174,7 @@ export function LandingPage() {
                 variant="gold"
                 className="w-full text-lg font-bold"
                 onClick={() => {
-                  // Try to pass user email if logged in
-                  const user = window?.firebaseAuth?.currentUser || undefined;
-                  redirectToStripeLink(user?.email);
+                  redirectToStripeLink();
                 }}
               >
                 Pay Now
