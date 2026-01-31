@@ -3,6 +3,10 @@ import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/lib/firebase/config';
 import { useNavigate } from 'react-router-dom';
 import { Mail, Lock, User, Building2, Eye, EyeOff, ArrowLeft } from 'lucide-react';
+import { db } from '@/lib/firebase/config';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { redirectToStripeLink } from '@/lib/stripe-client';
+
 
 export function SignUp() {
   const navigate = useNavigate();
@@ -60,8 +64,28 @@ export function SignUp() {
     setLoading(true);
 
     try {
-      await createUserWithEmailAndPassword(auth, formData.email, formData.password);
-      // User will be automatically redirected by auth context
+      const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
+      const user = userCredential.user;
+
+      // Create user document in Firestore
+      await setDoc(doc(db, 'users', user.uid), {
+        uid: user.uid,
+        email: formData.email,
+        displayName: formData.fullName,
+        agencyName: formData.agencyName,
+        role: 'sales_rep',
+        department: 'Sales',
+        subscription_active: false, // Will be set to true by webhook after payment
+        subscription_tier: 'professional',
+        isActive: true,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+
+      console.log('User document created, redirecting to payment...');
+
+      // Redirect to Stripe for payment
+      redirectToStripeLink(formData.email);
     } catch (err) {
       if (err instanceof Error) {
         if (err.message.includes('email-already-in-use')) {

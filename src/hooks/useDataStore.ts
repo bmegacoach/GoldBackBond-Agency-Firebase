@@ -11,7 +11,8 @@ import {
     getDoc,
     writeBatch,
 } from 'firebase/firestore';
-import { db, auth } from '@/lib/firebase/config';
+import { db } from '@/lib/firebase/config';
+import { useAuth } from '@/lib/firebase/auth-context';
 
 interface UseDataStoreOptions {
     collectionName: string;
@@ -19,22 +20,6 @@ interface UseDataStoreOptions {
 
 // Cache to store fetched data
 const dataCache = new Map<string, any[]>();
-
-// Helper to check if user is paid - now properly async
-const isPaidUser = async (): Promise<boolean> => {
-    try {
-        const user = auth.currentUser;
-        if (!user) return false;
-        
-        const token = await user.getIdTokenResult();
-        return token.claims?.stripeRole === 'paid' ||
-               token.claims?.subscriptionStatus === 'active' ||
-               token.claims?.role === 'paid';
-    } catch (error) {
-        console.error('Error checking paid status:', error);
-        return false;
-    }
-};
 
 // Helper to migrate data from localStorage to Firebase
 const migrateLocalToFirebase = async <_T extends { id?: string }>(
@@ -83,11 +68,15 @@ const migrateLocalToFirebase = async <_T extends { id?: string }>(
 export function useDataStore<T extends { id?: string, createdAt?: any, updatedAt?: any }>(
     options: UseDataStoreOptions
 ) {
+    const { isPaid: authIsPaid } = useAuth();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [data, setData] = useState<T[]>([]);
     const cacheKey = `crm_data_${options.collectionName}`;
-    
+
+    // Internal helper for usage in async callbacks
+    const isPaidUser = async () => authIsPaid;
+
     // Cache management
     const updateCache = (newData: T[]) => {
         dataCache.set(cacheKey, newData);
@@ -108,7 +97,7 @@ export function useDataStore<T extends { id?: string, createdAt?: any, updatedAt
         const key = getLocalStorageKey();
         const stored = localStorage.getItem(key);
         const items = stored ? JSON.parse(stored) : [];
-        
+
         // Check demo mode limits
         checkDemoLimits(items);
 
@@ -217,13 +206,13 @@ export function useDataStore<T extends { id?: string, createdAt?: any, updatedAt
     };
 
     // --- Optimistic Updates and State Management ---
-    
+
     const create = useCallback(async (data: Omit<T, 'id'>) => {
         setLoading(true);
         setError(null);
         try {
             const paid = await isPaidUser();
-            
+
             if (paid) {
                 // Check for local data to migrate
                 await migrateLocalToFirebase<T>(options.collectionName);
@@ -248,12 +237,12 @@ export function useDataStore<T extends { id?: string, createdAt?: any, updatedAt
     const update = useCallback(async (id: string, data: Partial<T>) => {
         setLoading(true);
         setError(null);
-        
+
         // Get current data for rollback and optimistic update
         const currentData = dataCache.get(cacheKey) || [];
         const itemIndex = currentData.findIndex(item => item.id === id);
         const previousItem = itemIndex >= 0 ? { ...currentData[itemIndex] } : null;
-        
+
         // Optimistic update
         if (itemIndex >= 0) {
             const optimisticData = [...currentData];
@@ -264,7 +253,7 @@ export function useDataStore<T extends { id?: string, createdAt?: any, updatedAt
             };
             updateCache(optimisticData);
         }
-        
+
         try {
             const paid = await isPaidUser();
             const isLocalId = id.startsWith('local_');
@@ -285,7 +274,7 @@ export function useDataStore<T extends { id?: string, createdAt?: any, updatedAt
                 rollbackData[itemIndex] = previousItem;
                 updateCache(rollbackData);
             }
-            
+
             const message = err instanceof Error ? err.message : 'Failed to update record';
             setError(message);
             throw err;
@@ -297,34 +286,34 @@ export function useDataStore<T extends { id?: string, createdAt?: any, updatedAt
     const remove = useCallback(async (id: string) => {
         setLoading(true);
         setError(null);
-        
+
         // Store for potential rollback
         const currentData = dataCache.get(cacheKey) || [];
         const itemIndex = currentData.findIndex(item => item.id === id);
         const removedItem = itemIndex >= 0 ? currentData[itemIndex] : null;
-        
+
         // Optimistic removal
         if (itemIndex >= 0) {
             const optimisticData = currentData.filter(item => item.id !== id);
             updateCache(optimisticData);
         }
-        
+
         try {
             const paid = await isPaidUser();
-            
+
             if (id.startsWith('local_') || !paid) {
                 await localRemove(id);
             } else {
                 await firebaseRemove(id);
             }
-            
+
             // No need to refresh, optimistic update already applied
         } catch (err) {
             // Rollback on error
             if (removedItem) {
                 updateCache([...(dataCache.get(cacheKey) || []), removedItem]);
             }
-            
+
             const message = err instanceof Error ? err.message : 'Failed to delete record';
             setError(message);
             throw err;
@@ -337,7 +326,7 @@ export function useDataStore<T extends { id?: string, createdAt?: any, updatedAt
         try {
             const paid = await isPaidUser();
             let result: T[] = [];
-            
+
             if (paid) {
                 // Migrate any local data first
                 await migrateLocalToFirebase<T>(options.collectionName);
@@ -345,7 +334,7 @@ export function useDataStore<T extends { id?: string, createdAt?: any, updatedAt
             } else {
                 result = await localFetchAll();
             }
-            
+
             updateCache(result);
             return result;
         } catch (err) {
@@ -361,10 +350,10 @@ export function useDataStore<T extends { id?: string, createdAt?: any, updatedAt
         if (cached) {
             return cached;
         }
-        
+
         setLoading(true);
         setError(null);
-        
+
         try {
             const result = await refreshData();
             return result;
@@ -375,7 +364,7 @@ export function useDataStore<T extends { id?: string, createdAt?: any, updatedAt
 
     const fetchById = useCallback(async (id: string) => {
         const paid = await isPaidUser();
-        
+
         if (id.startsWith('local_') || !paid) {
             const all = await localFetchAll();
             return all.find(item => item.id === id) || null;
@@ -390,7 +379,7 @@ export function useDataStore<T extends { id?: string, createdAt?: any, updatedAt
         setError(null);
         try {
             const paid = await isPaidUser();
-            
+
             if (paid) {
                 const q = query(collection(db, options.collectionName), where(fieldName, '==', fieldValue));
                 const querySnapshot = await getDocs(q);
@@ -413,14 +402,10 @@ export function useDataStore<T extends { id?: string, createdAt?: any, updatedAt
         }
     }, [options.collectionName]);
 
-    // Auto-refresh data when user auth state changes
+    // Auto-refresh data when user auth state changes or paid status changes
     useEffect(() => {
-        const unsubscribe = auth.onAuthStateChanged(() => {
-            refreshData();
-        });
-        
-        return unsubscribe;
-    }, [refreshData]);
+        refreshData();
+    }, [refreshData, authIsPaid]);
 
     return {
         create,
@@ -433,6 +418,6 @@ export function useDataStore<T extends { id?: string, createdAt?: any, updatedAt
         loading,
         error,
         data,
-        isPaid: isPaidUser,
+        isPaid: authIsPaid,
     };
 }

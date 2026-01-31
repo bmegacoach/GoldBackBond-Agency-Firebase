@@ -4,11 +4,12 @@ import { Button } from './ui/Button';
 import { Input } from './ui/Input';
 import { Select } from './ui/Select';
 import { Badge } from './ui/Badge';
-import { Search, Plus, Filter, Trash2, Edit2, Settings } from 'lucide-react';
+import { Search, Plus, Filter, Trash2, Edit2, Settings, Download, Upload } from 'lucide-react';
 import { LeadFormModal } from './forms/LeadFormModal';
 import { useDataStore } from '@/hooks/useDataStore';
 import { useSchema, DynamicColumn } from '@/hooks/useSchema';
 import { useAuth } from '@/lib/firebase/auth-context';
+import { CSVService, CSVColumn } from '@/utils/CSVService';
 
 interface Lead {
   id?: string;
@@ -20,6 +21,9 @@ interface Lead {
   status: 'new' | 'contacted' | 'qualified' | 'converted' | 'lost';
   priority: 'high' | 'medium' | 'low';
   source: string;
+  stage?: number;
+  estimatedValue?: number;
+  closeDate?: string;
   createdAt?: Date;
   updatedAt?: Date;
   [key: string]: any; // Allow dynamic fields
@@ -33,6 +37,7 @@ export function LeadsManager() {
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isImporting, setIsImporting] = useState(false);
 
   // Dynamic Column State
   const [showColumnCreator, setShowColumnCreator] = useState(false);
@@ -85,12 +90,12 @@ export function LeadsManager() {
         if (current?.updatedAt !== editingLead.updatedAt) {
           throw new Error('Data has been modified by another user. Please refresh and try again.');
         }
-        
+
         await dataStore.update(editingLead.id, formData);
       } else {
         await dataStore.create(formData);
       }
-      
+
       setEditingLead(null);
       setIsModalOpen(false);
     } catch (error) {
@@ -116,21 +121,21 @@ export function LeadsManager() {
       setFormError('Column name is required');
       return;
     }
-    
+
     // Check for duplicates
     const exists = schema.columns.some(col => col.label.toLowerCase() === newColName.trim().toLowerCase());
     if (exists) {
       setFormError('A column with this name already exists');
       return;
     }
-    
+
     // Check for reserved field names
     const reserved = ['id', 'firstName', 'lastName', 'email', 'phone', 'company', 'status', 'priority', 'source', 'createdAt', 'updatedAt'];
     if (reserved.includes(newColName.trim())) {
       setFormError('This field name is reserved and cannot be used');
       return;
     }
-    
+
     schema.addColumn({
       label: newColName,
       type: newColType,
@@ -159,23 +164,23 @@ export function LeadsManager() {
   // Memoized filtered leads with proper null checks and trimming
   const filteredLeads = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
-    
+
     return leads.filter((lead) => {
       // Safe field access with defaults
       const firstName = lead.firstName || '';
       const lastName = lead.lastName || '';
       const email = lead.email || '';
       const company = lead.company || '';
-      
+
       const matchesSearch = !term ||
         firstName.toLowerCase().includes(term) ||
         lastName.toLowerCase().includes(term) ||
         email.toLowerCase().includes(term) ||
         company.toLowerCase().includes(term);
-        
+
       const matchesStatus = statusFilter === 'all' || lead.status === statusFilter;
       const matchesPriority = priorityFilter === 'all' || lead.priority === priorityFilter;
-      
+
       return matchesSearch && matchesStatus && matchesPriority;
     });
   }, [leads, searchTerm, statusFilter, priorityFilter]);
@@ -197,6 +202,73 @@ export function LeadsManager() {
     }
   };
 
+  const getExportColumns = (): CSVColumn[] => {
+    const baseCols: CSVColumn[] = [
+      { key: 'firstName', label: 'First Name' },
+      { key: 'lastName', label: 'Last Name' },
+      { key: 'email', label: 'Email' },
+      { key: 'phone', label: 'Phone' },
+      { key: 'company', label: 'Company' },
+      { key: 'status', label: 'Status' },
+      { key: 'priority', label: 'Priority' },
+      { key: 'source', label: 'Source' },
+    ];
+
+    const dynamicCols = schema.columns.map(col => ({
+      key: col.key,
+      label: col.label,
+      isDynamic: true
+    }));
+
+    return [...baseCols, ...dynamicCols];
+  };
+
+  const handleExport = () => {
+    CSVService.exportData(filteredLeads, getExportColumns(), `leads_export_${Date.now()}`);
+  };
+
+  const handleImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsImporting(true);
+      setFormError(null);
+      const importedData = await CSVService.importData(file, getExportColumns());
+
+      let successCount = 0;
+      for (const item of importedData) {
+        try {
+          // Basic validation for import
+          if (!item.firstName || !item.lastName || !item.email) continue;
+
+          await dataStore.create({
+            ...item,
+            status: item.status || 'new',
+            priority: item.priority || 'medium',
+            source: item.source || 'CSV Import',
+            stage: Number(item.stage) || 1,
+            estimatedValue: Number(item.estimatedValue) || 0,
+            closeDate: item.closeDate || ''
+          });
+          successCount++;
+        } catch (err) {
+          console.error('Failed to import lead:', item, err);
+        }
+      }
+
+      alert(`Successfully imported ${successCount} leads.`);
+      await dataStore.refreshData();
+    } catch (error) {
+      setFormError('Failed to import CSV file. Please check the format.');
+      console.error(error);
+    } finally {
+      setIsImporting(false);
+      // Reset input
+      if (event.target) event.target.value = '';
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -215,10 +287,27 @@ export function LeadsManager() {
           <h1 className="text-3xl font-bold text-gray-900">Leads Manager</h1>
           <p className="text-gray-600 mt-2">
             Manage and track your sales pipeline
-            <Badge variant="warning" className="ml-2">Demo Mode (Local Storage)</Badge>
+            {!dataStore.isPaid && (
+              <Badge variant="warning" className="ml-2">Demo Mode (Local Storage)</Badge>
+            )}
           </p>
         </div>
         <div className="flex gap-2">
+          <input
+            type="file"
+            id="csv-import-leads"
+            className="hidden"
+            accept=".csv"
+            onChange={handleImport}
+          />
+          <Button variant="outline" onClick={() => document.getElementById('csv-import-leads')?.click()} disabled={isImporting}>
+            <Upload className="w-4 h-4 mr-2" />
+            {isImporting ? 'Importing...' : 'Import CSV'}
+          </Button>
+          <Button variant="outline" onClick={handleExport}>
+            <Download className="w-4 h-4 mr-2" />
+            Export CSV
+          </Button>
           <Button variant="outline" onClick={() => setShowColumnCreator(!showColumnCreator)}>
             <Settings className="w-4 h-4 mr-2" />
             {showColumnCreator ? 'Cancel' : 'Customize Columns'}
@@ -425,4 +514,3 @@ export function LeadsManager() {
     </div>
   );
 }
-

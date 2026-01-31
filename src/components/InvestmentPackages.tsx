@@ -104,21 +104,21 @@ export function InvestmentPackages() {
       // ...existing code...
       return;
     }
-    
+
     // Check for duplicates
     const exists = schema.columns.some(col => col.label.toLowerCase() === newColName.trim().toLowerCase());
     if (exists) {
       // ...existing code...
       return;
     }
-    
+
     // Check for reserved field names
     const reserved = ['id', 'name', 'minInvestment', 'interestRate', 'duration', 'description', 'allocation', 'features', 'createdAt', 'updatedAt'];
     if (reserved.includes(newColName.trim())) {
       // ...existing code...
       return;
     }
-    
+
     schema.addColumn({
       label: newColName,
       type: newColType,
@@ -137,7 +137,9 @@ export function InvestmentPackages() {
           <h1 className="text-3xl font-bold text-gray-900">Investment Packages</h1>
           <p className="text-gray-600 mt-2">
             Browse and manage investment offerings
-            <Badge variant="warning" className="ml-2">Demo Mode</Badge>
+            {!dataStore.isPaid && (
+              <Badge variant="warning" className="ml-2">Demo Mode</Badge>
+            )}
           </p>
         </div>
         <div className="flex gap-2">

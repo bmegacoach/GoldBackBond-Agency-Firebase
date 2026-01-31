@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/lib/firebase/config';
 import { Button } from './ui/Button';
-import { redirectToStripeLink } from '@/lib/stripe-client';
 import { useAuth } from '@/lib/firebase/auth-context';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
@@ -74,24 +73,6 @@ export function SignIn() {
     }
   };
 
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setLoading(true);
-
-    try {
-      // Store user credentials temporarily for payment completion
-      localStorage.setItem('pendingUser', JSON.stringify({ email, password }));
-
-      // Redirect to payment instead of creating account
-      redirectToStripeLink(email);
-    } catch (err) {
-      setError('Failed to process sign up. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
       {/* Background decorative elements */}
@@ -149,7 +130,7 @@ export function SignIn() {
           )}
 
           {/* Form */}
-          <form onSubmit={view === 'signin' ? handleSignIn : handleSignUp} className="space-y-5">
+          <form onSubmit={handleSignIn} className="space-y-5">
             {/* Email Field */}
             <div>
               <label className="block text-sm font-semibold text-white mb-2">
@@ -245,29 +226,10 @@ export function SignIn() {
             </p>
           </div>
 
-          {/* Demo Credentials */}
-          {view === 'signin' && (
-            <div className="mt-6 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-              <p className="text-xs text-slate-300 font-semibold mb-2">Demo Credentials:</p>
-              <p className="text-xs text-slate-400">Email: admin@goldbandagency.com</p>
-              <p className="text-xs text-slate-400">Password: Demo@123456</p>
-              <button
-                type="button"
-                onClick={() => {
-                  setEmail('admin@goldbandagency.com');
-                  setPassword('Demo@123456');
-                }}
-                className="mt-2 text-xs text-blue-400 hover:text-blue-300 underline"
-              >
-                Fill demo credentials
-              </button>
-            </div>
-          )}
-
           {/* Footer */}
           <div className="mt-6 text-center">
             <p className="text-slate-500 text-xs">
-              {view === 'signup' ? 'Account will be created after successful payment' : 'Contact support for account assistance'}
+              Contact support for account assistance
             </p>
           </div>
         </div>

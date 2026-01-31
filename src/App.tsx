@@ -13,6 +13,7 @@ import { UserManagementPanel } from './components/admin/UserManagementPanel';
 import { ContractManagementPanel } from './components/contracts/ContractManagementPanel';
 import { AutomatedOnboardingPanel } from './components/onboarding/AutomatedOnboardingPanel';
 import { SignIn } from './components/SignIn';
+import { SignUp } from './components/SignUp';
 import { PaymentResult } from './components/PaymentResult';
 import { LandingPage } from './components/LandingPage';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
@@ -65,7 +66,7 @@ export default function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/payment" element={<PaymentResult />} />
           <Route path="/signin" element={<SignIn />} />
-          <Route path="/signup" element={<SignIn />} />
+          <Route path="/signup" element={<SignUp />} />
           <Route path="/dashboard/*" element={<ProtectedRoutes />} />
         </Routes>
       </Router>

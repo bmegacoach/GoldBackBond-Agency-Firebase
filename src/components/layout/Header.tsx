@@ -1,10 +1,17 @@
 import { Bell, Search, Menu } from 'lucide-react';
+import { useAuth } from '@/lib/firebase/auth-context';
 
 interface HeaderProps {
   toggleSidebar: () => void;
 }
 
 export function Header({ toggleSidebar }: HeaderProps) {
+  const { user } = useAuth();
+
+  const displayName = user?.displayName || user?.email?.split('@')[0] || 'User';
+  const email = user?.email || '';
+  const initials = displayName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+
   return (
     <header className="h-20 bg-white/80 backdrop-blur-xl border-b border-slate-200/60 sticky top-0 z-40 transition-all duration-300">
       <div className="h-full px-8 flex items-center justify-between">
@@ -36,11 +43,11 @@ export function Header({ toggleSidebar }: HeaderProps) {
 
           <button className="flex items-center gap-3 p-1.5 pl-2 pr-4 rounded-xl hover:bg-slate-50 transition-all border border-transparent hover:border-slate-100 group">
             <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-gold-400 to-gold-600 flex items-center justify-center text-white font-bold border border-gold-300/50 shadow-sm group-hover:shadow group-hover:scale-105 transition-all">
-              JD
+              {initials}
             </div>
             <div className="hidden md:block text-left">
-              <p className="text-sm font-bold text-slate-700 group-hover:text-gold-700 transition-colors">John Doe</p>
-              <p className="text-xs text-slate-400 font-medium">Senior Portfolio Manager</p>
+              <p className="text-sm font-bold text-slate-700 group-hover:text-gold-700 transition-colors">{displayName}</p>
+              <p className="text-xs text-slate-400 font-medium truncate max-w-[150px]">{email}</p>
             </div>
           </button>
         </div>

@@ -135,7 +135,7 @@ export function LandingPage() {
               onClick={() => navigate('/signin')}
               className="text-lg px-8 py-6 shadow-xl shadow-gold-500/20 hover:scale-105 transition-transform"
             >
-              Try Demo Mode
+              Sign In
               <ArrowRight className="ml-2 w-5 h-5" />
             </Button>
             <Button
@@ -205,7 +205,7 @@ export function LandingPage() {
               Precision Engineered for Performance
             </h2>
             <p className="text-xl text-slate-600 max-w-3xl mx-auto">
-              Start with our fully functional <strong>Demo Mode</strong> to explore the power of GoldBackBond. Upgrade to our <strong>Broadcast Plan</strong> for cloud sync and team collaboration.
+              Start with our baseline features to explore the power of GoldBackBond. Upgrade to our <strong>Broadcast Plan</strong> for cloud sync and team collaboration.
             </p>
           </div>
 
@@ -282,16 +282,16 @@ export function LandingPage() {
             Ready to ascend?
           </h2>
           <p className="text-xl text-slate-600 mb-10 max-w-2xl mx-auto">
-            Experience the power of GoldBackBond today with our instant <strong>Demo Mode</strong>. Upgrade to <strong>Broadcast Plan</strong> for full cloud features.
+            Experience the power of GoldBackBond today. Upgrade to <strong>Broadcast Plan</strong> for full cloud features.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Button
               size="lg"
               variant="primary"
-              onClick={() => navigate('/signin')}
+              onClick={() => navigate('/signup')}
               className="text-lg px-10 py-5 shadow-2xl shadow-primary-900/20"
             >
-              Enter Demo Mode
+              Get Started
               <ArrowRight className="ml-2 w-5 h-5" />
             </Button>
             <p className="text-sm text-slate-500 mt-4 sm:mt-0 sm:ml-6">

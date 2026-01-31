@@ -11,11 +11,11 @@ import {
   Target,
   Zap,
   ArrowUpRight,
-  ArrowDownRight,
-  Clock
+  ArrowDownRight
 } from 'lucide-react';
 import { useDataStore } from '@/hooks/useDataStore';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/lib/firebase/auth-context';
 
 // Real-time metric component
 function MetricCard({
@@ -51,8 +51,8 @@ function MetricCard({
   };
 
   const ChangeIcon = changeType === 'positive' ? ArrowUpRight :
-                   changeType === 'negative' ? ArrowDownRight :
-                   ArrowUpRight;
+    changeType === 'negative' ? ArrowDownRight :
+      ArrowUpRight;
 
   return (
     <Card
@@ -61,16 +61,16 @@ function MetricCard({
     >
       {/* Gradient background effect */}
       <div className="absolute inset-0 bg-gradient-to-br from-white to-gray-50 opacity-100 group-hover:opacity-95 transition-opacity" />
-      
+
       {/* Top accent bar */}
       <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-gold-400 to-gold-600 opacity-0 group-hover:opacity-100 transition-opacity" />
-      
+
       <CardContent className="relative p-6">
         <div className="flex items-start justify-between mb-4">
           <div className={`p-3 rounded-xl ${iconColors[iconColor as keyof typeof iconColors]}`}>
             <Icon className="w-6 h-6" />
           </div>
-          
+
           {change !== undefined && (
             <div className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold ${changeColors[changeType]}`}>
               <ChangeIcon className="w-3 h-3" />
@@ -78,78 +78,18 @@ function MetricCard({
             </div>
           )}
         </div>
-        
+
         <div className="space-y-1">
           <p className="text-gray-500 text-sm font-medium tracking-wide">{title}</p>
           <p className="text-3xl font-bold text-gray-900 font-sans">{value}</p>
         </div>
-        
+
         {/* Hover indicator */}
         <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
           <Zap className="w-4 h-4 text-gold-500" />
         </div>
       </CardContent>
     </Card>
-  );
-}
-
-// Activity item component
-function ActivityItem({
-  type,
-  title,
-  description,
-  time,
-  status = 'completed'
-}: {
-  type: 'lead' | 'customer' | 'payment' | 'ticket';
-  title: string;
-  description: string;
-  time: string;
-  status?: 'completed' | 'pending' | 'failed';
-}) {
-  const icons = {
-    lead: Target,
-    customer: Users,
-    payment: DollarSign,
-    ticket: Activity
-  };
-
-  const iconColors = {
-    lead: 'bg-blue-500/10 text-blue-600',
-    customer: 'bg-green-500/10 text-green-600',
-    payment: 'bg-purple-500/10 text-purple-600',
-    ticket: 'bg-orange-500/10 text-orange-600'
-  };
-
-  const statusColors = {
-    completed: 'text-green-600',
-    pending: 'text-yellow-600',
-    failed: 'text-red-600'
-  };
-
-  const Icon = icons[type];
-
-  return (
-    <div className="flex items-center gap-4 p-4 rounded-xl hover:bg-gray-50 transition-colors group">
-      <div className={`p-2 rounded-lg ${iconColors[type]}`}>
-        <Icon className="w-4 h-4" />
-      </div>
-      
-      <div className="flex-1 min-w-0">
-        <p className="font-medium text-gray-900 truncate group-hover:text-gold-600 transition-colors">
-          {title}
-        </p>
-        <p className="text-sm text-gray-500 truncate">{description}</p>
-      </div>
-      
-      <div className="flex items-center gap-2 shrink-0">
-        <Clock className="w-3 h-3 text-gray-400" />
-        <span className="text-xs text-gray-500">{time}</span>
-        <span className={`text-xs ${statusColors[status]}`}>
-          {status === 'completed' ? '✓' : status === 'pending' ? '⏳' : '✗'}
-        </span>
-      </div>
-    </div>
   );
 }
 
@@ -186,6 +126,7 @@ function QuickActionButton({
 }
 
 export function Overview() {
+  const { isPaid } = useAuth();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [metrics, setMetrics] = useState({
@@ -208,7 +149,7 @@ export function Overview() {
       try {
         const leads = await dataStore.fetchAll();
         const customers = await customersStore.fetchAll();
-        
+
         // Calculate metrics
         const totalLeads = leads.length;
         const activeCustomers = customers.filter((c: any) => c.status === 'active').length;
@@ -217,10 +158,10 @@ export function Overview() {
         const conversionRate = totalLeads > 0 ? (convertedLeads / totalLeads) * 100 : 0;
 
         // Calculate changes (mock data for demo)
-        const leadsChange = Math.floor(Math.random() * 30) - 5; // -5% to +25%
-        const customersChange = Math.floor(Math.random() * 20) - 2; // -2% to +18%
-        const pipelineChange = Math.floor(Math.random() * 40) - 10; // -10% to +30%
-        const conversionChange = Math.floor(Math.random() * 15) - 7; // -7% to +8%
+        const leadsChange = 0;
+        const customersChange = 0;
+        const pipelineChange = 0;
+        const conversionChange = 0;
 
         setMetrics({
           totalLeads,
@@ -258,14 +199,17 @@ export function Overview() {
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
         <div>
-          <h1 className="text-4xl font-bold text-gray-900 tracking-tight">
+          <h1 className="text-4xl font-bold text-gray-900 tracking-tight flex items-center gap-3">
             GoldBackBond Agency
+            {!isPaid && (
+              <Badge variant="warning" className="text-sm">Demo Mode</Badge>
+            )}
           </h1>
           <p className="text-gray-600 mt-2 text-lg">
             Premium CRM & Investment Management Platform
           </p>
         </div>
-        
+
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2 px-4 py-2 bg-green-500/10 rounded-lg">
             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
@@ -339,42 +283,10 @@ export function Overview() {
             </div>
           </CardHeader>
           <CardContent className="p-0">
-            <div className="divide-y divide-gray-100">
-              <ActivityItem
-                type="lead"
-                title="New High-Value Lead Created"
-                description="Sarah Johnson - $50K investment interest"
-                time="2m ago"
-                status="completed"
-              />
-              <ActivityItem
-                type="customer"
-                title="Customer Onboarding Completed"
-                description="Michael Chen - Portfolio activated"
-                time="15m ago"
-                status="completed"
-              />
-              <ActivityItem
-                type="payment"
-                title="Payment Received"
-                description="$10,000 deposit from Enterprise Corp"
-                time="1h ago"
-                status="completed"
-              />
-              <ActivityItem
-                type="ticket"
-                title="Support Ticket Resolved"
-                description="Investment withdrawal inquiry"
-                time="3h ago"
-                status="completed"
-              />
-              <ActivityItem
-                type="lead"
-                title="Lead Status Updated"
-                description="Robert Smith moved to Qualified"
-                time="5h ago"
-                status="pending"
-              />
+            <div className="divide-y divide-gray-100 min-h-[300px] flex flex-col justify-center items-center text-center p-8">
+              <Activity className="w-12 h-12 text-slate-200 mb-4" />
+              <p className="text-slate-500 font-medium">No recent activity</p>
+              <p className="text-slate-400 text-sm mt-1">Activities from your leads and customers will appear here.</p>
             </div>
           </CardContent>
         </Card>
@@ -420,16 +332,16 @@ export function Overview() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gold-700">New Leads</span>
-                <span className="text-lg font-bold text-gold-900">+12</span>
+                <span className="text-sm text-gold-700">New Leads (Today)</span>
+                <span className="text-lg font-bold text-gold-900">0</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gold-700">Conversions</span>
-                <span className="text-lg font-bold text-gold-900">+3</span>
+                <span className="text-sm text-gold-700">Conversions (Today)</span>
+                <span className="text-lg font-bold text-gold-900">0</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gold-700">Revenue</span>
-                <span className="text-lg font-bold text-gold-900">+$45K</span>
+                <span className="text-sm text-gold-700">Revenue (Today)</span>
+                <span className="text-lg font-bold text-gold-900">$0</span>
               </div>
               <div className="pt-3 border-t border-gold-200">
                 <div className="flex items-center justify-between">

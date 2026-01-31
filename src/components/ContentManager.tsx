@@ -4,6 +4,7 @@ import { Button } from './ui/Button';
 import { Select } from './ui/Select';
 import { Badge } from './ui/Badge';
 import { Zap, Settings, Plus } from 'lucide-react';
+import { useAuth } from '@/lib/firebase/auth-context';
 import { useFirebaseForm } from '@/hooks/useFirebaseForm';
 import { useSchema, DynamicColumn } from '@/hooks/useSchema';
 import { Input } from './ui/Input';
@@ -20,6 +21,7 @@ interface Content {
 }
 
 export function ContentManager() {
+  const { isPaid } = useAuth();
   const [content, setContent] = useState<Content[]>([]);
   const [typeFilter, setTypeFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -89,21 +91,21 @@ export function ContentManager() {
       // ...existing code...
       return;
     }
-    
+
     // Check for duplicates
     const exists = schema.columns.some(col => col.label.toLowerCase() === newColName.trim().toLowerCase());
     if (exists) {
       // ...existing code...
       return;
     }
-    
+
     // Check for reserved field names
     const reserved = ['id', 'title', 'type', 'status', 'createdAt', 'views', 'clicks'];
     if (reserved.includes(newColName.trim())) {
       // ...existing code...
       return;
     }
-    
+
     schema.addColumn({
       label: newColName,
       type: newColType,
@@ -121,8 +123,10 @@ export function ContentManager() {
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Content Manager</h1>
           <p className="text-gray-600 mt-2">
-            Create and manage AI-generated marketing content
-            <Badge variant="warning" className="ml-2">Demo Mode (Local Storage)</Badge>
+            Create and manage marketing content
+            {!isPaid && (
+              <Badge variant="warning" className="ml-2">Demo Mode (Local Storage)</Badge>
+            )}
           </p>
         </div>
         <div className="flex gap-2">
@@ -227,7 +231,7 @@ export function ContentManager() {
                 )}
               </div>
             ))}
-            
+
             <div className="flex gap-2">
               <Button variant="primary" className="flex-1">
                 Generate Content

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
-import { X, User, Mail, Building2, Phone, Target, AlertTriangle, Zap, Database } from 'lucide-react';
+import { X, User, Mail, Building2, Phone, Target, AlertTriangle, Zap, Database, DollarSign, Calendar, Layers } from 'lucide-react';
 import { DynamicColumn } from '@/hooks/useSchema';
 
 interface LeadFormModalProps {
@@ -26,6 +26,9 @@ export function LeadFormModal({ isOpen, onClose, onSubmit, loading, initialData,
       status: 'new',
       priority: 'medium',
       source: 'website',
+      stage: 1,
+      estimatedValue: 0,
+      closeDate: '',
     }
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -49,28 +52,18 @@ export function LeadFormModal({ isOpen, onClose, onSubmit, loading, initialData,
     }
 
     try {
-      await onSubmit(formData);
-      // Reset form handled by useEffect on open, but we clear if successful and not waiting for prop update
-      if (!initialData) {
-        setFormData({
-          firstName: '',
-          lastName: '',
-          email: '',
-          company: '',
-          phone: '',
-          status: 'new',
-          priority: 'medium',
-          source: 'website',
-        });
-      }
+      await onSubmit({
+        ...formData,
+        stage: Number(formData.stage) || 1,
+        estimatedValue: Number(formData.estimatedValue) || 0,
+      });
+      // Reset form handled by useEffect on open
       onClose();
     } catch (error) {
-      // Error handled by parent passing 'error' prop usually
       console.error(error);
     }
   };
 
-  // Reset form when modal opens/closes or initialData changes
   useEffect(() => {
     if (isOpen) {
       setFormData(
@@ -83,6 +76,9 @@ export function LeadFormModal({ isOpen, onClose, onSubmit, loading, initialData,
           status: 'new',
           priority: 'medium',
           source: 'website',
+          stage: 1,
+          estimatedValue: 0,
+          closeDate: '',
         }
       );
       setErrors({});
@@ -141,9 +137,7 @@ export function LeadFormModal({ isOpen, onClose, onSubmit, loading, initialData,
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-primary-700">
-                    First Name *
-                  </label>
+                  <label className="block text-sm font-semibold text-primary-700">First Name *</label>
                   <Input
                     value={formData.firstName || ''}
                     onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
@@ -154,9 +148,7 @@ export function LeadFormModal({ isOpen, onClose, onSubmit, loading, initialData,
                 </div>
 
                 <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-primary-700">
-                    Last Name *
-                  </label>
+                  <label className="block text-sm font-semibold text-primary-700">Last Name *</label>
                   <Input
                     value={formData.lastName || ''}
                     onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
@@ -168,9 +160,7 @@ export function LeadFormModal({ isOpen, onClose, onSubmit, loading, initialData,
               </div>
 
               <div className="space-y-2">
-                <label className="block text-sm font-semibold text-primary-700">
-                  Email Address *
-                </label>
+                <label className="block text-sm font-semibold text-primary-700">Email Address *</label>
                 <div className="relative">
                   <Mail className="absolute left-4 top-3.5 w-5 h-5 text-primary-400" />
                   <Input
@@ -185,20 +175,80 @@ export function LeadFormModal({ isOpen, onClose, onSubmit, loading, initialData,
               </div>
             </div>
 
-            {/* Company Information */}
+            {/* Pipeline Information */}
+            <div className="space-y-6">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-primary-100 rounded-lg flex items-center justify-center">
+                  <Target className="w-4 h-4 text-primary-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-primary-900">Pipeline Information</h3>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-primary-700 text-sm">Pipeline Stage</label>
+                  <div className="relative">
+                    <Layers className="absolute left-3 top-3 w-4 h-4 text-primary-400 z-10" />
+                    <Select
+                      className="pl-9"
+                      value={formData.stage || 1}
+                      onChange={(e) => setFormData({ ...formData, stage: Number(e.target.value) })}
+                      options={[
+                        { value: 1, label: '1. Identification' },
+                        { value: 2, label: '2. Contact' },
+                        { value: 3, label: '3. Needs Analysis' },
+                        { value: 4, label: '4. Presentation' },
+                        { value: 5, label: '5. Objection Handling' },
+                        { value: 6, label: '6. Proposal' },
+                        { value: 7, label: '7. Commitment' },
+                        { value: 8, label: '8. Signature' },
+                        { value: 9, label: '9. Onboarding' },
+                      ]}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-primary-700 text-sm">Est. Value (USD)</label>
+                  <div className="relative">
+                    <DollarSign className="absolute left-3 top-3 w-4 h-4 text-primary-400" />
+                    <Input
+                      type="number"
+                      className="pl-9"
+                      value={formData.estimatedValue || 0}
+                      onChange={(e) => setFormData({ ...formData, estimatedValue: parseFloat(e.target.value) })}
+                      placeholder="50000"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-primary-700 text-sm">Target Close</label>
+                  <div className="relative">
+                    <Calendar className="absolute left-3 top-3 w-4 h-4 text-primary-400" />
+                    <Input
+                      type="date"
+                      className="pl-9"
+                      value={formData.closeDate || ''}
+                      onChange={(e) => setFormData({ ...formData, closeDate: e.target.value })}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Additional Details */}
             <div className="space-y-6">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 bg-primary-100 rounded-lg flex items-center justify-center">
                   <Building2 className="w-4 h-4 text-primary-600" />
                 </div>
-                <h3 className="text-lg font-semibold text-primary-900">Company Information</h3>
+                <h3 className="text-lg font-semibold text-primary-900">Additional Details</h3>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-primary-700">
-                    Company Name
-                  </label>
+                  <label className="block text-sm font-semibold text-primary-700">Company</label>
                   <Input
                     value={formData.company || ''}
                     onChange={(e) => setFormData({ ...formData, company: e.target.value })}
@@ -207,9 +257,7 @@ export function LeadFormModal({ isOpen, onClose, onSubmit, loading, initialData,
                 </div>
 
                 <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-primary-700">
-                    Phone Number
-                  </label>
+                  <label className="block text-sm font-semibold text-primary-700">Phone</label>
                   <div className="relative">
                     <Phone className="absolute left-4 top-3.5 w-5 h-5 text-primary-400" />
                     <Input
@@ -222,22 +270,10 @@ export function LeadFormModal({ isOpen, onClose, onSubmit, loading, initialData,
                   </div>
                 </div>
               </div>
-            </div>
 
-            {/* Lead Details */}
-            <div className="space-y-6">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-primary-100 rounded-lg flex items-center justify-center">
-                  <Target className="w-4 h-4 text-primary-600" />
-                </div>
-                <h3 className="text-lg font-semibold text-primary-900">Lead Details</h3>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-primary-700">
-                    Status
-                  </label>
+                  <label className="block text-sm font-semibold text-primary-700">Status</label>
                   <Select
                     value={formData.status || 'new'}
                     onChange={(e) => setFormData({ ...formData, status: e.target.value })}
@@ -252,9 +288,7 @@ export function LeadFormModal({ isOpen, onClose, onSubmit, loading, initialData,
                 </div>
 
                 <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-primary-700">
-                    Priority
-                  </label>
+                  <label className="block text-sm font-semibold text-primary-700">Priority</label>
                   <Select
                     value={formData.priority || 'medium'}
                     onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
@@ -262,25 +296,6 @@ export function LeadFormModal({ isOpen, onClose, onSubmit, loading, initialData,
                       { value: 'high', label: 'High' },
                       { value: 'medium', label: 'Medium' },
                       { value: 'low', label: 'Low' },
-                    ]}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-primary-700">
-                    Source
-                  </label>
-                  <Select
-                    value={formData.source || 'website'}
-                    onChange={(e) => setFormData({ ...formData, source: e.target.value })}
-                    options={[
-                      { value: 'website', label: 'Website' },
-                      { value: 'referral', label: 'Referral' },
-                      { value: 'social', label: 'Social Media' },
-                      { value: 'email', label: 'Email Campaign' },
-                      { value: 'phone', label: 'Phone Call' },
-                      { value: 'trade_show', label: 'Trade Show' },
-                      { value: 'other', label: 'Other' },
                     ]}
                   />
                 </div>
@@ -321,21 +336,10 @@ export function LeadFormModal({ isOpen, onClose, onSubmit, loading, initialData,
 
             {/* Actions */}
             <div className="flex items-center justify-end gap-4 pt-8 border-t border-primary-100">
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={onClose}
-                disabled={loading}
-                className="px-6"
-              >
+              <Button type="button" variant="ghost" onClick={onClose} disabled={loading} className="px-6">
                 Cancel
               </Button>
-              <Button
-                type="submit"
-                variant="primary"
-                disabled={loading}
-                className="px-8 min-w-[140px]"
-              >
+              <Button type="submit" variant="primary" disabled={loading} className="px-8 min-w-[140px]">
                 {loading ? (
                   <span className="flex items-center justify-center gap-2 w-full">
                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />

@@ -2,12 +2,15 @@ import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
-import { ArrowRight, BarChart3 } from 'lucide-react';
+import { ArrowRight, BarChart3, Plus } from 'lucide-react';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import { useAuth } from '@/lib/firebase/auth-context';
 import { StageCard } from './StageCard';
 import { SalesProgressModal } from './SalesProgressModal';
+import { LeadFormModal } from '../forms/LeadFormModal';
+import { useDataStore } from '@/hooks/useDataStore';
+import { useSchema } from '@/hooks/useSchema';
 
 // 9-Step Rocket Selling System Pipeline
 const PIPELINE_STAGES = [
@@ -49,6 +52,9 @@ export function PipelineView() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [viewType, setViewType] = useState<'kanban' | 'list' | 'analytics'>('kanban');
+  const [isLeadFormOpen, setIsLeadFormOpen] = useState(false);
+  const dataStore = useDataStore<Lead>({ collectionName: 'leads' });
+  const schema = useSchema({ collectionName: 'leads' });
 
   useEffect(() => {
     if (user) {
@@ -61,7 +67,7 @@ export function PipelineView() {
       setLoading(true);
       const leadsRef = collection(db, 'leads');
       const snapshot = await getDocs(leadsRef);
-      
+
       const leadsByStage: Record<number, Lead[]> = {};
       PIPELINE_STAGES.forEach(stage => {
         leadsByStage[stage.id] = [];
@@ -112,6 +118,14 @@ export function PipelineView() {
           <p className="text-primary-600 text-sm mt-1">9-Step Rocket Selling System</p>
         </div>
         <div className="flex items-center gap-2">
+          <Button
+            variant="primary"
+            onClick={() => setIsLeadFormOpen(true)}
+            className="mr-4"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Add Lead
+          </Button>
           <Button
             variant={viewType === 'kanban' ? 'primary' : 'outline'}
             onClick={() => setViewType('kanban')}
@@ -280,6 +294,18 @@ export function PipelineView() {
         onStageUpdate={() => {
           loadPipelineData();
         }}
+      />
+
+      <LeadFormModal
+        isOpen={isLeadFormOpen}
+        onClose={() => setIsLeadFormOpen(false)}
+        onSubmit={async (data) => {
+          await dataStore.create(data);
+          loadPipelineData();
+          setIsLeadFormOpen(false);
+        }}
+        loading={dataStore.loading}
+        dynamicColumns={schema.columns}
       />
     </div>
   );
