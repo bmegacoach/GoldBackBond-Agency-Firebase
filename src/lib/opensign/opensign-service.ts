@@ -106,7 +106,7 @@ async function openSignFetch<T>(
       ...options,
       headers: {
         'Content-Type': 'application/json',
-        'X-Parse-ApiKey': OPENSIGN_API_KEY,
+        'x-api-token': OPENSIGN_API_KEY,
         ...options.headers,
       },
     });
