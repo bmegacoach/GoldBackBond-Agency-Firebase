@@ -17,6 +17,7 @@ import {
   type OpenSignWidget,
   type OpenSignDocument,
   type CreateDocumentRequest,
+  type DocumentType,
 } from './opensign-service';
 
 export interface UseOpenSignReturn {
@@ -39,7 +40,7 @@ export interface UseOpenSignReturn {
     prefillData?: Record<string, string>;
   }) => Promise<OpenSignDocument | null>;
   checkDocumentStatus: (documentId: string) => Promise<OpenSignDocument | null>;
-  fetchDocuments: (status?: 'in-progress' | 'completed' | 'declined') => Promise<OpenSignDocument[]>;
+  fetchDocuments: (docType?: DocumentType) => Promise<OpenSignDocument[]>;
   cancelDocument: (documentId: string) => Promise<boolean>;
   resendRequest: (documentId: string, signerEmail?: string) => Promise<boolean>;
   clearError: () => void;
@@ -173,13 +174,13 @@ export function useOpenSign(): UseOpenSignReturn {
   }, []);
 
   const fetchDocuments = useCallback(async (
-    status?: 'in-progress' | 'completed' | 'declined'
+    docType: DocumentType = 'in-progress'
   ): Promise<OpenSignDocument[]> => {
     setLoading(true);
     setError(null);
 
     try {
-      const result = await getDocumentList(status);
+      const result = await getDocumentList(docType);
       
       if (!result.success || !result.data) {
         setError(result.error || 'Failed to fetch documents');
@@ -257,4 +258,4 @@ export function useOpenSign(): UseOpenSignReturn {
   };
 }
 
-export type { OpenSignSigner, OpenSignWidget, OpenSignDocument };
+export type { OpenSignSigner, OpenSignWidget, OpenSignDocument, DocumentType };

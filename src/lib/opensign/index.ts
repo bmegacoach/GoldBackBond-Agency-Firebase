@@ -51,4 +51,5 @@ export type {
   OpenSignResponse,
   CreateDocumentRequest,
   CreateDocumentFromTemplateRequest,
+  DocumentType,
 } from './opensign-service';

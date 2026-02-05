@@ -194,13 +194,25 @@ export async function getDocument(
 }
 
 /**
- * Get list of documents with optional status filter
+ * Document types for filtering document list
+ * - draft: Documents not yet sent for signing
+ * - need-your-sign: Documents waiting for your signature
+ * - need-others-sign: Documents waiting for others to sign
+ * - in-progress: Documents with pending signatures
+ * - completed: Fully signed documents
+ * - declined: Declined documents
+ * - expired: Expired documents
+ */
+export type DocumentType = 'draft' | 'need-your-sign' | 'need-others-sign' | 'in-progress' | 'completed' | 'declined' | 'expired';
+
+/**
+ * Get list of documents by type
+ * @param docType - The type/status of documents to retrieve
  */
 export async function getDocumentList(
-  status?: 'in-progress' | 'completed' | 'declined' | 'expired'
+  docType: DocumentType = 'in-progress'
 ): Promise<OpenSignResponse<OpenSignDocument[]>> {
-  const endpoint = status ? `/documentlist?status=${status}` : '/documentlist';
-  return openSignFetch<OpenSignDocument[]>(endpoint, {
+  return openSignFetch<OpenSignDocument[]>(`/documentlist/${docType}`, {
     method: 'GET',
   });
 }
