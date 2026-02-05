@@ -1,4 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
+import { Button } from '../ui/Button';
+import { Input } from '../ui/Input';
+import { Badge } from '../ui/Badge';
+import { X, Plus, FileText, Send, CheckCircle, Clock, AlertCircle, Download, Eye, Upload, RefreshCw, ExternalLink, Ban } from 'lucide-react';
+import { collection, getDocs, doc, setDoc, updateDoc, query, orderBy, limit, startAfter, where } from 'firebase/firestore';
+import { db } from '@/lib/firebase/config';
+import { useAuth } from '@/lib/firebase/auth-context';
+import { useOpenSign, isOpenSignConfigured } from '@/lib/opensign';
+
 // Default columns for the contracts table
 const ALL_COLUMNS = [
   { key: 'customer', label: 'Customer' },
@@ -9,14 +19,6 @@ const ALL_COLUMNS = [
   { key: 'created', label: 'Created' },
   { key: 'actions', label: 'Actions' },
 ];
-import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
-import { Button } from '../ui/Button';
-import { Input } from '../ui/Input';
-import { Badge } from '../ui/Badge';
-import { X, Plus, FileText, Send, CheckCircle, Clock, AlertCircle, Download, Eye } from 'lucide-react';
-import { collection, getDocs, doc, setDoc, updateDoc, query, orderBy, limit, startAfter, where } from 'firebase/firestore';
-import { db } from '@/lib/firebase/config';
-import { useAuth } from '@/lib/firebase/auth-context';
 
 interface Contract {
   id: string;
@@ -35,7 +37,8 @@ interface Contract {
   createdAt: any;
   signingDeadline?: any;
   signedDate?: any;
-  docusignEnvelopeId?: string;
+  openSignDocumentId?: string;
+  openSignUrl?: string;
   signature?: {
     signedBy: string;
     signedAt: any;
@@ -59,6 +62,11 @@ const CONTRACT_TEMPLATES = [
     name: 'Collateral Pledge Agreement',
     description: 'Collateral management terms',
   },
+  {
+    id: 'trainee_agreement',
+    name: 'Sales Agent Agreement',
+    description: 'New trainee onboarding contract',
+  },
 ];
 
 export function ContractManagementPanel() {
@@ -68,16 +76,31 @@ export function ContractManagementPanel() {
   const [lastDoc, setLastDoc] = useState<any>(null);
   const [hasMore, setHasMore] = useState(true);
   const PAGE_SIZE = 10;
-  const [statusFilter, setStatusFilter] = useState<string>(''); // For optional filtering
+  const [statusFilter, setStatusFilter] = useState<string>('');
   const [isCreating, setIsCreating] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<string>('');
-  // Column customization state
   const [visibleColumns, setVisibleColumns] = useState<string[]>(ALL_COLUMNS.map(col => col.key));
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // OpenSign integration
+  const { 
+    isConfigured: openSignConfigured, 
+    loading: openSignLoading, 
+    error: openSignError,
+    sendForSignature,
+    checkDocumentStatus,
+    resendRequest,
+    cancelDocument,
+    clearError: clearOpenSignError,
+  } = useOpenSign();
+
   const toggleColumn = (key: string) => {
     setVisibleColumns((cols: string[]) =>
       cols.includes(key) ? cols.filter((c: string) => c !== key) : [...cols, key]
     );
   };
+
   const [formData, setFormData] = useState({
     customerId: '',
     customerName: '',
@@ -93,12 +116,10 @@ export function ContractManagementPanel() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-
   useEffect(() => {
     if (user) {
       loadContracts(true);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, statusFilter]);
 
   const loadContracts = async (reset = false) => {
@@ -138,18 +159,26 @@ export function ContractManagementPanel() {
       setLoading(false);
     }
   };
-  // Pagination: Load more handler
+
   const handleLoadMore = () => {
     if (!loading && hasMore) {
       loadContracts();
     }
   };
 
-  // Optional: Status filter UI handler
   const handleStatusFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setStatusFilter(e.target.value);
     setLastDoc(null);
     setHasMore(true);
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && file.type === 'application/pdf') {
+      setUploadedFile(file);
+    } else {
+      setError('Please upload a PDF file');
+    }
   };
 
   const handleGenerateContract = async (e: React.FormEvent) => {
@@ -180,6 +209,7 @@ export function ContractManagementPanel() {
         createdAt: new Date(),
         createdBy: user?.uid,
         signingDeadline: formData.signingDeadline ? new Date(formData.signingDeadline) : null,
+        templateType: selectedTemplate,
       };
 
       await setDoc(doc(db, 'contracts', contractId), contractDoc);
@@ -198,23 +228,142 @@ export function ContractManagementPanel() {
         signingDeadline: '',
       });
       setSelectedTemplate('');
+      setUploadedFile(null);
       setIsCreating(false);
-      loadContracts();
+      loadContracts(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to generate contract');
     }
   };
 
-  const handleSendForSignature = async (contractId: string) => {
+  const handleSendForSignature = async (contractId: string, contract: Contract) => {
+    setError(null);
+    setSuccess(null);
+
+    if (!openSignConfigured) {
+      // Fallback to simple status update if OpenSign not configured
+      try {
+        await updateDoc(doc(db, 'contracts', contractId), {
+          status: 'sent',
+          sentAt: new Date(),
+        });
+        setSuccess('Contract marked as sent. Configure OpenSign for automated e-signatures.');
+        loadContracts(true);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to send contract');
+      }
+      return;
+    }
+
+    // Use OpenSign for real e-signature
     try {
-      await updateDoc(doc(db, 'contracts', contractId), {
-        status: 'sent',
-        sentAt: new Date(),
+      if (!uploadedFile) {
+        setError('Please upload a PDF contract document first');
+        return;
+      }
+
+      const openSignDoc = await sendForSignature({
+        title: contract.title,
+        file: uploadedFile,
+        signers: [{
+          name: contract.customerName,
+          email: contract.customerEmail,
+          role: 'Customer',
+        }],
+        note: `Please sign your ${contract.title}. Investment amount: $${contract.investmentAmount.toLocaleString()}`,
+        expiryDays: 14,
       });
-      setSuccess('Contract sent for signature!');
-      loadContracts();
+
+      if (openSignDoc) {
+        await updateDoc(doc(db, 'contracts', contractId), {
+          status: 'sent',
+          sentAt: new Date(),
+          openSignDocumentId: openSignDoc.objectId,
+          openSignUrl: openSignDoc.URL,
+        });
+        setSuccess(`Contract sent to ${contract.customerEmail} via OpenSign!`);
+        setUploadedFile(null);
+        loadContracts(true);
+      } else {
+        setError(openSignError || 'Failed to send contract via OpenSign');
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to send contract');
+    }
+  };
+
+  const handleCheckStatus = async (contractId: string, openSignDocumentId: string) => {
+    setError(null);
+    
+    try {
+      const openSignDoc = await checkDocumentStatus(openSignDocumentId);
+      
+      if (openSignDoc) {
+        let newStatus: Contract['status'] = 'sent';
+        
+        if (openSignDoc.Status === 'completed') {
+          newStatus = 'signed';
+        } else if (openSignDoc.Status === 'declined' || openSignDoc.Status === 'expired') {
+          newStatus = 'draft'; // Reset to draft if declined/expired
+        }
+
+        await updateDoc(doc(db, 'contracts', contractId), {
+          status: newStatus,
+          ...(newStatus === 'signed' ? {
+            signedDate: new Date(),
+            signature: {
+              signedBy: openSignDoc.Signers?.[0]?.email || 'customer',
+              signedAt: new Date(),
+              ipAddress: 'opensign_signature',
+            },
+          } : {}),
+        });
+
+        if (newStatus === 'signed') {
+          setSuccess('Contract has been signed!');
+        } else {
+          setSuccess(`Contract status: ${openSignDoc.Status}`);
+        }
+        loadContracts(true);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to check status');
+    }
+  };
+
+  const handleResendRequest = async (contractId: string, contract: Contract) => {
+    setError(null);
+    
+    if (!contract.openSignDocumentId) {
+      setError('No OpenSign document ID found');
+      return;
+    }
+
+    const success = await resendRequest(contract.openSignDocumentId, contract.customerEmail);
+    if (success) {
+      setSuccess(`Signature request resent to ${contract.customerEmail}`);
+    } else {
+      setError(openSignError || 'Failed to resend request');
+    }
+  };
+
+  const handleCancelContract = async (contractId: string, contract: Contract) => {
+    setError(null);
+
+    if (contract.openSignDocumentId) {
+      await cancelDocument(contract.openSignDocumentId);
+    }
+
+    try {
+      await updateDoc(doc(db, 'contracts', contractId), {
+        status: 'draft',
+        openSignDocumentId: null,
+        openSignUrl: null,
+      });
+      setSuccess('Contract cancelled and reset to draft');
+      loadContracts(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to cancel contract');
     }
   };
 
@@ -226,17 +375,17 @@ export function ContractManagementPanel() {
         signature: {
           signedBy: contract.customerEmail,
           signedAt: new Date(),
-          ipAddress: 'webhook_signature',
+          ipAddress: 'manual_confirmation',
         },
       });
       setSuccess('Contract marked as signed!');
-      loadContracts();
+      loadContracts(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update contract');
     }
   };
 
-  if (loading) {
+  if (loading && contracts.length === 0) {
     return (
       <Card>
         <CardContent className="p-8 text-center">
@@ -256,7 +405,7 @@ export function ContractManagementPanel() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold text-primary-900">Contract Management</h2>
-          <p className="text-primary-600 text-sm mt-1">Generate, track, and manage investment contracts</p>
+          <p className="text-primary-600 text-sm mt-1">Generate, track, and manage investment contracts with e-signatures</p>
         </div>
         <div className="flex gap-4 items-center">
           <select
@@ -281,6 +430,61 @@ export function ContractManagementPanel() {
         </div>
       </div>
 
+      {/* OpenSign Status Banner */}
+      {!openSignConfigured && (
+        <Card className="bg-warning-50 border-2 border-warning-200">
+          <CardContent className="p-4 flex items-center gap-3">
+            <AlertCircle className="w-5 h-5 text-warning-600" />
+            <div className="flex-1">
+              <p className="text-warning-800 font-medium">OpenSign Not Configured</p>
+              <p className="text-warning-700 text-sm">
+                Add VITE_OPENSIGN_API_KEY to your .env.local file to enable automated e-signatures.
+              </p>
+            </div>
+            <a
+              href="https://app.opensignlabs.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-warning-700 hover:text-warning-900 flex items-center gap-1 text-sm"
+            >
+              Get API Key <ExternalLink className="w-3 h-3" />
+            </a>
+          </CardContent>
+        </Card>
+      )}
+
+      {openSignConfigured && (
+        <Card className="bg-success-50 border-2 border-success-200">
+          <CardContent className="p-4 flex items-center gap-3">
+            <CheckCircle className="w-5 h-5 text-success-600" />
+            <div className="flex-1">
+              <p className="text-success-800 font-medium">OpenSign Connected</p>
+              <p className="text-success-700 text-sm">
+                E-signature integration is active. Contracts will be sent via OpenSign.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Error/Success Messages */}
+      {error && (
+        <div className="p-3 bg-danger-50 border border-danger-200 rounded-lg text-danger-700 text-sm flex items-center justify-between">
+          {error}
+          <button onClick={() => { setError(null); clearOpenSignError(); }} className="text-danger-500 hover:text-danger-700">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+      {success && (
+        <div className="p-3 bg-success-50 border border-success-200 rounded-lg text-success-700 text-sm flex items-center justify-between">
+          {success}
+          <button onClick={() => setSuccess(null)} className="text-success-500 hover:text-success-700">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       {/* Create Contract Form */}
       {isCreating && (
         <Card className="border-2 border-accent-200">
@@ -299,7 +503,7 @@ export function ContractManagementPanel() {
                 <label className="text-sm font-semibold text-primary-700 block mb-2">
                   Contract Template *
                 </label>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                   {CONTRACT_TEMPLATES.map(template => (
                     <div
                       key={template.id}
@@ -315,6 +519,40 @@ export function ContractManagementPanel() {
                     </div>
                   ))}
                 </div>
+              </div>
+
+              {/* PDF Upload */}
+              <div>
+                <label className="text-sm font-semibold text-primary-700 block mb-2">
+                  Contract PDF Document
+                </label>
+                <div className="flex items-center gap-4">
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileUpload}
+                    accept=".pdf"
+                    className="hidden"
+                  />
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex items-center gap-2"
+                  >
+                    <Upload className="w-4 h-4" />
+                    {uploadedFile ? 'Change File' : 'Upload PDF'}
+                  </Button>
+                  {uploadedFile && (
+                    <span className="text-sm text-success-600 flex items-center gap-1">
+                      <CheckCircle className="w-4 h-4" />
+                      {uploadedFile.name}
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-primary-500 mt-1">
+                  Upload the PDF contract document for e-signature
+                </p>
               </div>
 
               {/* Customer Information */}
@@ -425,17 +663,6 @@ export function ContractManagementPanel() {
                 />
               </div>
 
-              {error && (
-                <div className="p-3 bg-danger-50 border border-danger-200 rounded-lg text-danger-700 text-sm">
-                  {error}
-                </div>
-              )}
-              {success && (
-                <div className="p-3 bg-success-50 border border-success-200 rounded-lg text-success-700 text-sm">
-                  {success}
-                </div>
-              )}
-
               <div className="flex gap-3 pt-4">
                 <Button type="submit" variant="primary">
                   Generate Contract
@@ -493,12 +720,12 @@ export function ContractManagementPanel() {
         </Card>
       </div>
 
-      {/* Contracts Table with Column Customization */}
+      {/* Contracts Table */}
       <Card>
         <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
           <CardTitle>All Contracts</CardTitle>
           <div className="flex flex-wrap gap-2 items-center">
-            <span className="text-xs text-primary-500 mr-2">Customize columns:</span>
+            <span className="text-xs text-primary-500 mr-2">Columns:</span>
             {ALL_COLUMNS.map(col => (
               <label key={col.key} className="flex items-center gap-1 text-xs cursor-pointer">
                 <input
@@ -554,40 +781,96 @@ export function ContractManagementPanel() {
                         }>
                           {contract.status.charAt(0).toUpperCase() + contract.status.slice(1)}
                         </Badge>
+                        {contract.openSignDocumentId && (
+                          <span className="ml-1 text-xs text-accent-600">(OpenSign)</span>
+                        )}
                       </td>
                     )}
                     {visibleColumns.includes('created') && (
                       <td className="py-4 px-4 text-primary-600 text-xs">
-                        {new Date(contract.createdAt).toLocaleDateString()}
+                        {contract.createdAt?.toDate ? 
+                          contract.createdAt.toDate().toLocaleDateString() : 
+                          new Date(contract.createdAt).toLocaleDateString()}
                       </td>
                     )}
                     {visibleColumns.includes('actions') && (
                       <td className="py-4 px-4">
-                        <div className="flex gap-2">
-                          <button className="p-1 hover:bg-info-100 rounded text-info-600 transition-colors">
+                        <div className="flex gap-1">
+                          {/* View */}
+                          {contract.openSignUrl && (
+                            <a
+                              href={contract.openSignUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-1 hover:bg-info-100 rounded text-info-600 transition-colors"
+                              title="View in OpenSign"
+                            >
+                              <ExternalLink className="w-4 h-4" />
+                            </a>
+                          )}
+                          <button 
+                            className="p-1 hover:bg-info-100 rounded text-info-600 transition-colors"
+                            title="View contract"
+                          >
                             <Eye className="w-4 h-4" />
                           </button>
+
+                          {/* Draft: Send for signature */}
                           {contract.status === 'draft' && (
                             <button
-                              onClick={() => handleSendForSignature(contract.id)}
+                              onClick={() => handleSendForSignature(contract.id, contract)}
                               className="p-1 hover:bg-accent-100 rounded text-accent-600 transition-colors"
                               title="Send for signature"
+                              disabled={openSignLoading}
                             >
                               <Send className="w-4 h-4" />
                             </button>
                           )}
+
+                          {/* Sent: Check status, Resend, Cancel */}
                           {contract.status === 'sent' && (
-                            <button
-                              onClick={() => handleMarkSigned(contract.id, contract)}
-                              className="p-1 hover:bg-success-100 rounded text-success-600 transition-colors"
-                              title="Mark as signed"
-                            >
-                              <CheckCircle className="w-4 h-4" />
+                            <>
+                              {contract.openSignDocumentId && (
+                                <button
+                                  onClick={() => handleCheckStatus(contract.id, contract.openSignDocumentId!)}
+                                  className="p-1 hover:bg-info-100 rounded text-info-600 transition-colors"
+                                  title="Check signature status"
+                                  disabled={openSignLoading}
+                                >
+                                  <RefreshCw className={`w-4 h-4 ${openSignLoading ? 'animate-spin' : ''}`} />
+                                </button>
+                              )}
+                              <button
+                                onClick={() => handleResendRequest(contract.id, contract)}
+                                className="p-1 hover:bg-accent-100 rounded text-accent-600 transition-colors"
+                                title="Resend signature request"
+                                disabled={openSignLoading}
+                              >
+                                <Send className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleMarkSigned(contract.id, contract)}
+                                className="p-1 hover:bg-success-100 rounded text-success-600 transition-colors"
+                                title="Mark as signed (manual)"
+                              >
+                                <CheckCircle className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleCancelContract(contract.id, contract)}
+                                className="p-1 hover:bg-danger-100 rounded text-danger-600 transition-colors"
+                                title="Cancel contract"
+                              >
+                                <Ban className="w-4 h-4" />
+                              </button>
+                            </>
+                          )}
+
+                          {/* Signed: Download */}
+                          {(contract.status === 'signed' || contract.status === 'executed') && (
+                            <button className="p-1 hover:bg-primary-100 rounded text-primary-600 transition-colors" title="Download signed contract">
+                              <Download className="w-4 h-4" />
                             </button>
                           )}
-                          <button className="p-1 hover:bg-primary-100 rounded text-primary-600 transition-colors">
-                            <Download className="w-4 h-4" />
-                          </button>
                         </div>
                       </td>
                     )}
@@ -614,29 +897,43 @@ export function ContractManagementPanel() {
       </Card>
 
       {/* Integration Info */}
-      <Card className="bg-info-50 border-2 border-info-200">
+      <Card className="bg-gradient-to-r from-accent-50 to-info-50 border-2 border-accent-200">
         <CardHeader>
-          <CardTitle className="text-info-900 flex items-center gap-2">
-            <AlertCircle className="w-5 h-5" />
-            E-Signature Integration
+          <CardTitle className="text-accent-900 flex items-center gap-2">
+            <FileSignature className="w-5 h-5" />
+            E-Signature Integration (OpenSign)
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-info-800 text-sm mb-3">
-            This system is ready for DocuSign or HelloSign integration. Contracts are tracked in Firestore with:
+          <p className="text-accent-800 text-sm mb-3">
+            This system is integrated with OpenSign for automated e-signatures. Features include:
           </p>
-          <ul className="text-info-700 text-sm space-y-1 ml-4 list-disc">
-            <li>Draft generation with dynamic field population</li>
-            <li>Status tracking (draft → sent → signed → executed)</li>
-            <li>Signing deadline management</li>
-            <li>Signature capture and audit trail</li>
-            <li>Webhook support for signature callbacks</li>
+          <ul className="text-accent-700 text-sm space-y-1 ml-4 list-disc">
+            <li>Send contracts for e-signature via email</li>
+            <li>Real-time signature status tracking</li>
+            <li>Automatic status updates when signed</li>
+            <li>Resend signature requests</li>
+            <li>Cancel pending signature requests</li>
+            <li>Audit trail and signature capture</li>
           </ul>
-          <p className="text-info-700 text-xs mt-3">
-            <strong>Next Step:</strong> Connect DocuSign API to enable automated e-signature requests and callback handling.
-          </p>
+          {!openSignConfigured && (
+            <div className="mt-4 p-3 bg-warning-100 rounded-lg">
+              <p className="text-warning-800 text-sm font-medium">
+                To enable OpenSign integration:
+              </p>
+              <ol className="text-warning-700 text-xs mt-2 ml-4 list-decimal">
+                <li>Create an account at <a href="https://app.opensignlabs.com" target="_blank" rel="noopener noreferrer" className="underline">app.opensignlabs.com</a></li>
+                <li>Go to Settings → API to get your API key</li>
+                <li>Add <code className="bg-warning-200 px-1 rounded">VITE_OPENSIGN_API_KEY=your_key</code> to .env.local</li>
+                <li>Restart the development server</li>
+              </ol>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
   );
 }
+
+// Import FileSignature icon for the integration info card
+import { FileSignature } from 'lucide-react';
