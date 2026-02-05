@@ -1,4 +1,4 @@
-import { BarChart3, LayoutGrid, Users, Package, CreditCard, Ticket, TrendingUp, Workflow, Target, TrendingDown, Settings, FileSignature, User as UserIcon } from 'lucide-react';
+import { BarChart3, LayoutGrid, Users, Package, CreditCard, Ticket, TrendingUp, Workflow, Target, TrendingDown, Settings, FileSignature, User as UserIcon, GraduationCap, ExternalLink } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 
 const navItems = [
@@ -18,6 +18,17 @@ const navItems = [
 
   { id: 'analytics', label: 'Analytics', icon: TrendingUp, path: 'analytics', group: 'reporting' },
   { id: 'admin', label: 'Admin', icon: Settings, path: 'admin/users', group: 'admin' },
+];
+
+// External links for resources
+const externalLinks = [
+  { 
+    id: 'training', 
+    label: 'Agent Training', 
+    icon: GraduationCap, 
+    url: 'https://bmegacoach.github.io/goldbackbond-training/',
+    description: 'Complete your training modules'
+  },
 ];
 
 interface SidebarProps {
@@ -99,7 +110,36 @@ export function Sidebar({ isOpen = true }: SidebarProps) {
         {renderGroup(groups.operations, 'Operations')}
         {renderGroup(groups.reporting, 'Insights')}
 
-        <div className="mx-4 mt-8 pt-6 border-t border-slate-800">
+        {/* External Resources */}
+        <div className="mx-4 mt-6 pt-6 border-t border-slate-800">
+          {isOpen && (
+            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest px-4 py-2 opacity-80">
+              Resources
+            </p>
+          )}
+          {externalLinks.map((link) => {
+            const Icon = link.icon;
+            return (
+              <a
+                key={link.id}
+                href={link.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 px-4 py-3 mx-3 rounded-xl transition-all duration-300 group relative overflow-hidden text-slate-400 hover:bg-emerald-900/30 hover:text-emerald-400"
+              >
+                <Icon className="w-5 h-5 flex-shrink-0 transition-transform duration-300 group-hover:scale-110" />
+                {isOpen && (
+                  <>
+                    <span className="font-medium text-sm tracking-wide flex-1">{link.label}</span>
+                    <ExternalLink className="w-3 h-3 opacity-50 group-hover:opacity-100" />
+                  </>
+                )}
+              </a>
+            );
+          })}
+        </div>
+
+        <div className="mx-4 mt-4 pt-6 border-t border-slate-800">
           {renderGroup(groups.admin, 'System')}
         </div>
       </nav>
