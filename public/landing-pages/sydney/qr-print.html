@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@600;700;800&display=swap" rel="stylesheet">
+    <style>
+        @page { size: 4in 5in; margin: 0; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #f0f0f0;
+            font-family: 'Inter', sans-serif;
+            padding: 20px;
+        }
+        .qr-card {
+            width: 380px;
+            background: #000;
+            border-radius: 20px;
+            padding: 16px;
+        }
+        .gold-border {
+            background: linear-gradient(145deg, #D4AF37 0%, #F4D03F 40%, #D4AF37 60%, #B8962A 100%);
+            border-radius: 16px;
+            padding: 14px;
+        }
+        .qr-inner {
+            background: #fff;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+        .qr-code {
+            width: 240px;
+            height: 240px;
+            margin: 0 auto 16px;
+            display: block;
+        }
+        .agent-label {
+            background: linear-gradient(135deg, #1a1a1a 0%, #000 100%);
+            color: #D4AF37;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+            border: 2px solid #D4AF37;
+            display: inline-block;
+        }
+        .print-btn {
+            display: block;
+            margin: 30px auto 0;
+            padding: 12px 30px;
+            background: #D4AF37;
+            color: #000;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .print-btn:hover { background: #F4D03F; }
+        @media print {
+            body { background: white; padding: 0; }
+            .print-btn { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div>
+        <div class="qr-card">
+            <div class="gold-border">
+                <div class="qr-inner">
+                    <img class="qr-code" src="sydney-qr-v3.png" alt="Scan for USDGB Allocation">
+                    <div class="agent-label">Sydney@Goldbackbond.com</div>
+                </div>
+            </div>
+        </div>
+        <button class="print-btn" onclick="window.print()">🖨️ Print QR Card</button>
+    </div>
+</body>
+</html>

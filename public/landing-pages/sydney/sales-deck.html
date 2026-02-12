@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>USDGB Pre-List Allocation - Goldbackbond</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        @page { size: letter; margin: 0; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0a0a0a;
+            color: #fff;
+            line-height: 1.5;
+        }
+        
+        .page {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            min-height: 100vh;
+            padding: 40px;
+            page-break-after: always;
+        }
+        
+        /* Page 1: Cover */
+        .cover {
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #0a0a0a 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .cover::before {
+            content: '';
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(212,175,55,0.15) 0%, transparent 70%);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        
+        .logo-text {
+            font-size: 48px;
+            font-weight: 900;
+            background: linear-gradient(135deg, #D4AF37 0%, #F4D03F 50%, #D4AF37 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        
+        .cover h1 {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            color: #fff;
+        }
+        
+        .cover .subtitle {
+            font-size: 20px;
+            color: rgba(255,255,255,0.7);
+            margin-bottom: 40px;
+        }
+        
+        .cover-badge {
+            background: linear-gradient(135deg, #D4AF37 0%, #F4D03F 100%);
+            color: #0a0a0a;
+            padding: 12px 32px;
+            border-radius: 30px;
+            font-weight: 800;
+            font-size: 18px;
+        }
+        
+        .cover .confidential {
+            position: absolute;
+            bottom: 40px;
+            font-size: 12px;
+            color: rgba(255,255,255,0.4);
+            letter-spacing: 2px;
+        }
+        
+        /* Page styles */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .page-header .brand {
+            font-size: 18px;
+            font-weight: 800;
+            color: #D4AF37;
+        }
+        
+        .page-header .page-num {
+            font-size: 14px;
+            color: rgba(255,255,255,0.5);
+        }
+        
+        h2 {
+            font-size: 28px;
+            font-weight: 800;
+            margin-bottom: 24px;
+            color: #D4AF37;
+        }
+        
+        h3 {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            color: #fff;
+        }
+        
+        p {
+            font-size: 16px;
+            color: rgba(255,255,255,0.8);
+            margin-bottom: 16px;
+        }
+        
+        .highlight-box {
+            background: linear-gradient(135deg, rgba(212,175,55,0.15) 0%, rgba(212,175,55,0.05) 100%);
+            border: 1px solid rgba(212,175,55,0.3);
+            border-radius: 16px;
+            padding: 24px;
+            margin: 24px 0;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin: 24px 0;
+        }
+        
+        .stat-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+        }
+        
+        .stat-card .number {
+            font-size: 36px;
+            font-weight: 900;
+            color: #D4AF37;
+            margin-bottom: 8px;
+        }
+        
+        .stat-card .label {
+            font-size: 14px;
+            color: rgba(255,255,255,0.6);
+        }
+        
+        .benefit-list {
+            list-style: none;
+        }
+        
+        .benefit-list li {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 20px;
+            padding: 16px;
+            background: rgba(255,255,255,0.02);
+            border-radius: 12px;
+            border-left: 4px solid #D4AF37;
+        }
+        
+        .benefit-list .icon {
+            font-size: 24px;
+            margin-right: 16px;
+            flex-shrink: 0;
+        }
+        
+        .benefit-list .content strong {
+            display: block;
+            font-size: 16px;
+            color: #D4AF37;
+            margin-bottom: 4px;
+        }
+        
+        .benefit-list .content span {
+            font-size: 14px;
+            color: rgba(255,255,255,0.7);
+        }
+        
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 24px 0;
+        }
+        
+        .comparison-table th,
+        .comparison-table td {
+            padding: 16px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .comparison-table th {
+            font-size: 14px;
+            font-weight: 700;
+            color: rgba(255,255,255,0.5);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .comparison-table td {
+            font-size: 15px;
+        }
+        
+        .comparison-table .highlight-row {
+            background: rgba(212,175,55,0.1);
+        }
+        
+        .comparison-table .highlight-row td {
+            color: #D4AF37;
+            font-weight: 700;
+        }
+        
+        .cta-section {
+            background: linear-gradient(135deg, #D4AF37 0%, #F4D03F 100%);
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            margin-top: 40px;
+        }
+        
+        .cta-section h3 {
+            color: #0a0a0a;
+            font-size: 24px;
+            margin-bottom: 16px;
+        }
+        
+        .cta-section p {
+            color: rgba(0,0,0,0.7);
+            margin-bottom: 24px;
+        }
+        
+        .cta-button {
+            display: inline-block;
+            background: #0a0a0a;
+            color: #D4AF37;
+            padding: 16px 40px;
+            border-radius: 30px;
+            font-size: 18px;
+            font-weight: 800;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+        
+        .cta-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        .timeline {
+            position: relative;
+            margin: 30px 0;
+            padding-left: 30px;
+        }
+        
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 8px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(to bottom, #D4AF37, rgba(212,175,55,0.2));
+        }
+        
+        .timeline-item {
+            position: relative;
+            margin-bottom: 24px;
+            padding-left: 20px;
+        }
+        
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -26px;
+            top: 6px;
+            width: 14px;
+            height: 14px;
+            background: #D4AF37;
+            border-radius: 50%;
+        }
+        
+        .timeline-item .date {
+            font-size: 13px;
+            color: #D4AF37;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        
+        .timeline-item .event {
+            font-size: 15px;
+            color: rgba(255,255,255,0.8);
+        }
+        
+        .privacy-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(135deg, #ff6600 0%, #ff8533 100%);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+        
+        .footer-contact {
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            text-align: center;
+        }
+        
+        .footer-contact .agent-name {
+            font-size: 18px;
+            font-weight: 700;
+            color: #D4AF37;
+            margin-bottom: 8px;
+        }
+        
+        .footer-contact .agent-email {
+            font-size: 14px;
+            color: rgba(255,255,255,0.6);
+        }
+        
+        @media print {
+            body { background: #fff; color: #000; }
+            .page { padding: 30px; }
+            h2 { color: #B8962A; }
+            .stat-card .number { color: #B8962A; }
+            .benefit-list li { border-left-color: #B8962A; }
+            .benefit-list .content strong { color: #B8962A; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Page 1: Cover -->
+    <div class="page cover">
+        <div class="logo-text">GOLDBACKBOND</div>
+        <h1>USDGB Pre-List Token Allocation</h1>
+        <p class="subtitle">Exclusive Offering for Private Qualified Buyers</p>
+        <div class="cover-badge">$0.80 Pre-List Price</div>
+        <p class="confidential">CONFIDENTIAL • FOR QUALIFIED INVESTORS ONLY</p>
+    </div>
+    
+    <!-- Page 2: Executive Summary -->
+    <div class="page">
+        <div class="page-header">
+            <span class="brand">GOLDBACKBOND</span>
+            <span class="page-num">02</span>
+        </div>
+        
+        <h2>Executive Summary</h2>
+        
+        <p>USDGB is a gold-backed stablecoin offering investors exposure to physical gold with 3x leverage, zero liquidation risk, and a unique staking mechanism that amplifies returns during gold appreciation cycles.</p>
+        
+        <div class="highlight-box">
+            <h3>🎯 The Opportunity</h3>
+            <p style="margin-bottom:0">Pre-list investors acquire USDGB at <strong style="color:#D4AF37">$0.80</strong> before the Bloomberg terminal listing pushes the price to <strong style="color:#D4AF37">$1.00</strong> — an instant <strong style="color:#D4AF37">25% markup</strong> at listing.</p>
+        </div>
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="number">$0.80</div>
+                <div class="label">Pre-List Price</div>
+            </div>
+            <div class="stat-card">
+                <div class="number">$1.00</div>
+                <div class="label">Post-List Price</div>
+            </div>
+            <div class="stat-card">
+                <div class="number">3x</div>
+                <div class="label">Gold Leverage</div>
+            </div>
+            <div class="stat-card">
+                <div class="number">$2M</div>
+                <div class="label">Rewards Pool</div>
+            </div>
+        </div>
+        
+        <div class="privacy-badge">
+            🔐 Goldbackbond Private — Coming Soon
+        </div>
+        <p>Privacy-first version launching Q3 2026. Zero KYC, full self-custody, complete financial privacy.</p>
+    </div>
+    
+    <!-- Page 3: Benefits -->
+    <div class="page">
+        <div class="page-header">
+            <span class="brand">GOLDBACKBOND</span>
+            <span class="page-num">03</span>
+        </div>
+        
+        <h2>Why Pre-List Allocation?</h2>
+        
+        <ul class="benefit-list">
+            <li>
+                <span class="icon">💰</span>
+                <div class="content">
+                    <strong>25% Instant Markup</strong>
+                    <span>Pre-list at $0.80, list at $1.00. Immediate 25% gain upon Bloomberg listing.</span>
+                </div>
+            </li>
+            <li>
+                <span class="icon">🎁</span>
+                <div class="content">
+                    <strong>$2M Pre-List Rewards Pool</strong>
+                    <span>Pro-rata allocation from the rewards pool for all pre-list investors. Pool closes at listing.</span>
+                </div>
+            </li>
+            <li>
+                <span class="icon">📈</span>
+                <div class="content">
+                    <strong>3x Collateral Value Certificate</strong>
+                    <span>sUSDGB 12-month stake unlocks 3x collateral value for up to 70% LTV loans. Ex: 100K sUSDGB = 300K Gold Certificate × up to 70% LTV.</span>
+                </div>
+            </li>
+            <li>
+                <span class="icon">🪙</span>
+                <div class="content">
+                    <strong>15% Gold Bonus</strong>
+                    <span>When gold appreciates 10%+, receive an additional 2% bonus USDGB on top of leverage gains.</span>
+                </div>
+            </li>
+            <li>
+                <span class="icon">🛡️</span>
+                <div class="content">
+                    <strong>Zero Liquidation Risk Collateral</strong>
+                    <span>Unlike Aave's 80% LTV with margin calls, 12-month lock means no liquidation risk regardless of volatility.</span>
+                </div>
+            </li>
+            <li>
+                <span class="icon">🔒</span>
+                <div class="content">
+                    <strong>Physical Gold Backing</strong>
+                    <span>Every USDGB is backed by physical gold in a bankruptcy-remote trust. Fully audited reserves.</span>
+                </div>
+            </li>
+        </ul>
+    </div>
+    
+    <!-- Page 4: Comparison -->
+    <div class="page">
+        <div class="page-header">
+            <span class="brand">GOLDBACKBOND</span>
+            <span class="page-num">04</span>
+        </div>
+        
+        <h2>How USDGB Compares</h2>
+        
+        <table class="comparison-table">
+            <thead>
+                <tr>
+                    <th>Feature</th>
+                    <th>USDGB</th>
+                    <th>PAXG</th>
+                    <th>Aave Gold</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Gold Backing</td>
+                    <td>✅ Physical</td>
+                    <td>✅ Physical</td>
+                    <td>❌ Synthetic</td>
+                </tr>
+                <tr>
+                    <td>Leverage</td>
+                    <td><strong style="color:#D4AF37">3x</strong></td>
+                    <td>1x</td>
+                    <td>Variable</td>
+                </tr>
+                <tr>
+                    <td>Liquidation Risk</td>
+                    <td><strong style="color:#D4AF37">Zero</strong></td>
+                    <td>N/A</td>
+                    <td>High (80% LTV)</td>
+                </tr>
+                <tr>
+                    <td>Staking Rewards</td>
+                    <td>✅ Yes + Bonus</td>
+                    <td>❌ No</td>
+                    <td>Variable APY</td>
+                </tr>
+                <tr>
+                    <td>Pre-List Discount</td>
+                    <td><strong style="color:#D4AF37">20% ($0.80)</strong></td>
+                    <td>❌ None</td>
+                    <td>❌ None</td>
+                </tr>
+                <tr class="highlight-row">
+                    <td>Privacy Option</td>
+                    <td>✅ Coming Soon</td>
+                    <td>❌ Full KYC</td>
+                    <td>❌ Full KYC</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <div class="highlight-box">
+            <h3>📊 Gold Market Outlook</h3>
+            <p style="margin-bottom:0">With global uncertainty, de-dollarization trends, and central bank gold accumulation at record highs, gold is positioned for continued appreciation. USDGB's 3x leverage amplifies these gains while maintaining the safety of physical backing.</p>
+        </div>
+    </div>
+    
+    <!-- Page 5: Timeline & Allocation -->
+    <div class="page">
+        <div class="page-header">
+            <span class="brand">GOLDBACKBOND</span>
+            <span class="page-num">05</span>
+        </div>
+        
+        <h2>Timeline & Allocation Tiers</h2>
+        
+        <div class="timeline">
+            <div class="timeline-item">
+                <div class="date">NOW - March 31, 2026</div>
+                <div class="event">Pre-List Period — $0.80 pricing available</div>
+            </div>
+            <div class="timeline-item">
+                <div class="date">March 31, 2026</div>
+                <div class="event">Pre-list closes, rewards pool distributed</div>
+            </div>
+            <div class="timeline-item">
+                <div class="date">April 2026</div>
+                <div class="event">Bloomberg Terminal Listing $100M • HyperLiquid Listing 1 USDGB = $1</div>
+            </div>
+            <div class="timeline-item">
+                <div class="date">Q3 2026</div>
+                <div class="event">Goldbackbond Private launch (privacy-focused)</div>
+            </div>
+            <div class="timeline-item">
+                <div class="date">Q4 2026 - Q1 2027</div>
+                <div class="event">12-month staking period ends, Auto-restake if lending</div>
+            </div>
+        </div>
+        
+        <h3>Allocation Tiers</h3>
+        <table class="comparison-table">
+            <thead>
+                <tr>
+                    <th>Tier</th>
+                    <th>Allocation</th>
+                    <th>Bonus</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Starter</td>
+                    <td>$10,000 - $99,999</td>
+                    <td>Standard rewards pool</td>
+                </tr>
+                <tr>
+                    <td>Growth</td>
+                    <td>$100,000 - $499,999</td>
+                    <td>+5% bonus allocation</td>
+                </tr>
+                <tr>
+                    <td>Premium</td>
+                    <td>$500,000 - $999,999</td>
+                    <td>+10% bonus + priority support</td>
+                </tr>
+                <tr class="highlight-row">
+                    <td>Elite</td>
+                    <td>$1,000,000+</td>
+                    <td>+15% bonus + dedicated agent + custom terms</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Page 6: CTA -->
+    <div class="page">
+        <div class="page-header">
+            <span class="brand">GOLDBACKBOND</span>
+            <span class="page-num">06</span>
+        </div>
+        
+        <h2>Next Steps</h2>
+        
+        <p>You've received this deck because you've expressed interest in the USDGB pre-list allocation. Here's how to proceed:</p>
+        
+        <ul class="benefit-list">
+            <li>
+                <span class="icon">1️⃣</span>
+                <div class="content">
+                    <strong>Book Your Allocation Call</strong>
+                    <span>Schedule a 15-minute call with your Gold Agent to discuss your allocation size and answer questions.</span>
+                </div>
+            </li>
+            <li>
+                <span class="icon">2️⃣</span>
+                <div class="content">
+                    <strong>Complete Allocation Agreement</strong>
+                    <span>Review and sign the allocation agreement to lock in your $0.80 pricing.</span>
+                </div>
+            </li>
+            <li>
+                <span class="icon">3️⃣</span>
+                <div class="content">
+                    <strong>Fund Your Allocation</strong>
+                    <span>Transfer funds via wire, crypto, or approved payment methods.</span>
+                </div>
+            </li>
+            <li>
+                <span class="icon">4️⃣</span>
+                <div class="content">
+                    <strong>Receive USDGB Tokens and ETH Inscription Contract</strong>
+                    <span>Tokens are delivered to your wallet and automatically staked for 3x collateral value.</span>
+                </div>
+            </li>
+        </ul>
+        
+        <div class="cta-section">
+            <h3>🗓️ Ready to Secure Your Allocation?</h3>
+            <p>Pre-list pricing closes March 31, 2026. Don't miss the $0.80 opportunity.</p>
+            <a href="https://calendly.com/goldbackbond/30min" class="cta-button">BOOK YOUR CALL NOW →</a>
+        </div>
+        
+        <div class="footer-contact">
+            <p class="agent-name">Your Gold Agent: Sydney</p>
+            <p class="agent-email">Sydney@goldbackbond.com</p>
+        </div>
+    </div>
+</body>
+</html>
