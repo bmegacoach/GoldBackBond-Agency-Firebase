@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Goldbackbond Inc. - Institutional Credit Facility</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        @page { size: letter; margin: 0; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0a0a0a;
+            color: #fff;
+            line-height: 1.5;
+        }
+        
+        .page {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            min-height: 100vh;
+            padding: 40px;
+            page-break-after: always;
+        }
+        
+        .page:last-child { page-break-after: avoid; }
+        
+        /* Slide 1: Cover */
+        .cover {
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #0a0a0a 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .cover::before {
+            content: '';
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(212,175,55,0.15) 0%, transparent 70%);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        
+        .cover-logo {
+            font-size: 14px;
+            font-weight: 700;
+            color: rgba(255,255,255,0.5);
+            margin-bottom: 40px;
+            letter-spacing: 2px;
+        }
+        
+        .cover h1 {
+            font-size: 36px;
+            font-weight: 800;
+            margin-bottom: 16px;
+            color: #fff;
+            position: relative;
+        }
+        
+        .cover .subtitle {
+            font-size: 20px;
+            color: #D4AF37;
+            margin-bottom: 40px;
+            font-weight: 600;
+        }
+        
+        .cover-badge {
+            background: linear-gradient(135deg, #D4AF37 0%, #F4D03F 100%);
+            color: #0a0a0a;
+            padding: 16px 40px;
+            border-radius: 30px;
+            font-weight: 800;
+            font-size: 16px;
+        }
+        
+        .cover .meta {
+            position: absolute;
+            bottom: 40px;
+            font-size: 14px;
+            color: rgba(255,255,255,0.5);
+        }
+        
+        .cover .meta strong {
+            color: #D4AF37;
+        }
+        
+        /* Slide styles */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .page-header .brand {
+            font-size: 14px;
+            font-weight: 700;
+            color: #D4AF37;
+            letter-spacing: 2px;
+        }
+        
+        .page-header .page-num {
+            font-size: 14px;
+            color: rgba(255,255,255,0.5);
+        }
+        
+        h2 {
+            font-size: 28px;
+            font-weight: 800;
+            margin-bottom: 24px;
+            color: #D4AF37;
+        }
+        
+        h3 {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            color: #fff;
+        }
+        
+        p {
+            font-size: 16px;
+            color: rgba(255,255,255,0.8);
+            margin-bottom: 16px;
+        }
+        
+        .highlight-box {
+            background: linear-gradient(135deg, rgba(212,175,55,0.15) 0%, rgba(212,175,55,0.05) 100%);
+            border: 1px solid rgba(212,175,55,0.3);
+            border-radius: 16px;
+            padding: 24px;
+            margin: 24px 0;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin: 24px 0;
+        }
+        
+        .stat-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+        }
+        
+        .stat-card .number {
+            font-size: 36px;
+            font-weight: 900;
+            color: #D4AF37;
+            margin-bottom: 8px;
+        }
+        
+        .stat-card .label {
+            font-size: 14px;
+            color: rgba(255,255,255,0.6);
+        }
+        
+        .stat-card .icon {
+            font-size: 32px;
+            margin-bottom: 12px;
+        }
+        
+        .benefit-list {
+            list-style: none;
+        }
+        
+        .benefit-list li {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 20px;
+            padding: 20px;
+            background: rgba(255,255,255,0.02);
+            border-radius: 12px;
+            border-left: 4px solid #D4AF37;
+        }
+        
+        .benefit-list .number {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            background: #D4AF37;
+            color: #0a0a0a;
+            border-radius: 50%;
+            font-weight: 800;
+            font-size: 16px;
+            margin-right: 16px;
+            flex-shrink: 0;
+        }
+        
+        .benefit-list .content strong {
+            display: block;
+            font-size: 16px;
+            color: #D4AF37;
+            margin-bottom: 4px;
+        }
+        
+        .benefit-list .content span {
+            font-size: 14px;
+            color: rgba(255,255,255,0.7);
+        }
+        
+        .checklist {
+            list-style: none;
+        }
+        
+        .checklist li {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 16px;
+            padding: 16px;
+            background: rgba(255,255,255,0.02);
+            border-radius: 8px;
+        }
+        
+        .checklist .check {
+            color: #27ae60;
+            font-size: 20px;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+        
+        .checklist .text {
+            font-size: 15px;
+            color: rgba(255,255,255,0.8);
+        }
+        
+        .objectives-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            margin: 24px 0;
+        }
+        
+        .objective-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            padding: 20px;
+        }
+        
+        .objective-card .icon {
+            font-size: 28px;
+            margin-bottom: 12px;
+        }
+        
+        .objective-card h4 {
+            font-size: 14px;
+            font-weight: 700;
+            color: #D4AF37;
+            margin-bottom: 8px;
+        }
+        
+        .objective-card p {
+            font-size: 13px;
+            color: rgba(255,255,255,0.6);
+            margin-bottom: 0;
+        }
+        
+        .cta-section {
+            background: linear-gradient(135deg, #D4AF37 0%, #F4D03F 100%);
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            margin-top: 40px;
+        }
+        
+        .cta-section h3 {
+            color: #0a0a0a;
+            font-size: 22px;
+            margin-bottom: 16px;
+        }
+        
+        .cta-section p {
+            color: rgba(0,0,0,0.7);
+            margin-bottom: 24px;
+        }
+        
+        .cta-button {
+            display: inline-block;
+            background: #0a0a0a;
+            color: #D4AF37;
+            padding: 16px 40px;
+            border-radius: 30px;
+            font-size: 18px;
+            font-weight: 800;
+            text-decoration: none;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        
+        .cta-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        .contact-section {
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            text-align: center;
+        }
+        
+        .contact-section .name {
+            font-size: 20px;
+            font-weight: 700;
+            color: #D4AF37;
+            margin-bottom: 8px;
+        }
+        
+        .contact-section .title {
+            font-size: 14px;
+            color: rgba(255,255,255,0.6);
+            margin-bottom: 20px;
+        }
+        
+        .contact-section .company {
+            font-size: 14px;
+            color: rgba(255,255,255,0.5);
+        }
+        
+        .contact-section .address {
+            font-size: 13px;
+            color: rgba(255,255,255,0.4);
+            margin-top: 8px;
+        }
+        
+        .security-box {
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .security-box h4 {
+            font-size: 14px;
+            font-weight: 700;
+            color: #D4AF37;
+            margin-bottom: 12px;
+        }
+        
+        .security-box p {
+            font-size: 14px;
+            color: rgba(255,255,255,0.7);
+            margin-bottom: 8px;
+        }
+        
+        .security-box p:last-child {
+            margin-bottom: 0;
+        }
+        
+        .security-box strong {
+            color: #fff;
+        }
+        
+        @media print {
+            body { background: #fff; color: #000; }
+            .page { padding: 30px; }
+            h2 { color: #B8962A; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Slide 1: Cover -->
+    <div class="page cover">
+        <div class="cover-logo">GOLDBACKBOND INC.</div>
+        <h1>Institutional Credit Facility</h1>
+        <p class="subtitle">& Strategic Liquidity Partnership</p>
+        <p style="font-size: 16px; color: rgba(255,255,255,0.6); margin-bottom: 40px;">Class A Secured Debentures Collateral Proposal</p>
+        <div class="cover-badge">February 2026</div>
+        <div class="meta">
+            <strong>Troy Joyner, CEO</strong><br>
+            1301 Fannin St #2440, Houston, TX 77002<br>
+            Goldbackbond.com
+        </div>
+    </div>
+    
+    <!-- Slide 2: The Collateral -->
+    <div class="page">
+        <div class="page-header">
+            <span class="brand">GOLDBACKBOND</span>
+            <span class="page-num">02</span>
+        </div>
+        
+        <h2>The Collateral</h2>
+        <h3 style="color: #D4AF37; margin-bottom: 30px;">Class A Secured Debentures</h3>
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="icon">💵</div>
+                <div class="number">$100</div>
+                <div class="label">Per unit par value</div>
+            </div>
+            <div class="stat-card">
+                <div class="icon">📈</div>
+                <div class="number">Bloomberg</div>
+                <div class="label">Listing In Process</div>
+            </div>
+            <div class="stat-card">
+                <div class="icon">📊</div>
+                <div class="number">$20-50M</div>
+                <div class="label">Initial Pledge (scaling to $100M)</div>
+            </div>
+            <div class="stat-card">
+                <div class="icon">🔐</div>
+                <div class="number">Secured</div>
+                <div class="label">By USDGB Trust Fund Certificates</div>
+            </div>
+        </div>
+        
+        <div class="security-box">
+            <h4>Security Structure:</h4>
+            <p><strong>Asset Pool:</strong> Federal Reserve Gold Certificate-backed bond debentures, IP, 100% Texas C-Corp shares</p>
+            <p><strong>Legal Structure:</strong> Foreign Express Trust Enterprise + Texas Corporation</p>
+        </div>
+    </div>
+    
+    <!-- Slide 3: Counterparty Value -->
+    <div class="page">
+        <div class="page-header">
+            <span class="brand">GOLDBACKBOND</span>
+            <span class="page-num">03</span>
+        </div>
+        
+        <h2>Counterparty Value Proposition</h2>
+        
+        <ul class="benefit-list">
+            <li>
+                <span class="number">01</span>
+                <div class="content">
+                    <strong>Facility Intermediation Fees</strong>
+                    <span>Immediate revenue from brokering credit line with Tier-1 liquidity providers</span>
+                </div>
+            </li>
+            <li>
+                <span class="number">02</span>
+                <div class="content">
+                    <strong>Consistent Trading Revenue</strong>
+                    <span>Reliable commission and swap fee revenue from ongoing operations</span>
+                </div>
+            </li>
+            <li>
+                <span class="number">03</span>
+                <div class="content">
+                    <strong>Client Funnel & Ecosystem</strong>
+                    <span>Business clients mandated to use firm's brokerage services</span>
+                </div>
+            </li>
+            <li>
+                <span class="number">04</span>
+                <div class="content">
+                    <strong>Service Integration</strong>
+                    <span>Full suite adoption creating organic AUM growth flywheel</span>
+                </div>
+            </li>
+            <li>
+                <span class="number">05</span>
+                <div class="content">
+                    <strong>Cross-Collateral Integration</strong>
+                    <span>Hold the Course risk mitigation with conservative LTV</span>
+                </div>
+            </li>
+        </ul>
+    </div>
+    
+    <!-- Slide 4: Compliance -->
+    <div class="page">
+        <div class="page-header">
+            <span class="brand">GOLDBACKBOND</span>
+            <span class="page-num">04</span>
+        </div>
+        
+        <h2>Compliance & Operational Readiness</h2>
+        
+        <ul class="checklist">
+            <li>
+                <span class="check">✓</span>
+                <span class="text"><strong>Trust Agreement & Indemnification</strong> — Finalized and elevated to High Priority for immediate fund administration</span>
+            </li>
+            <li>
+                <span class="check">✓</span>
+                <span class="text"><strong>Master Use of Funds</strong> — Singular audited schedule aligning PPM, Trust Agreement, and Escrow instructions</span>
+            </li>
+            <li>
+                <span class="check">✓</span>
+                <span class="text"><strong>Organization Chart</strong> — Full transparency back to Parent entity for KYC/AML requirements</span>
+            </li>
+            <li>
+                <span class="check">✓</span>
+                <span class="text"><strong>Audited Financials</strong> — Prepared and ready for submission to bank risk departments</span>
+            </li>
+        </ul>
+    </div>
+    
+    <!-- Slide 5: Strategic Objectives -->
+    <div class="page">
+        <div class="page-header">
+            <span class="brand">GOLDBACKBOND</span>
+            <span class="page-num">05</span>
+        </div>
+        
+        <h2>Strategic Objectives</h2>
+        
+        <div class="objectives-grid">
+            <div class="objective-card">
+                <div class="icon">↻</div>
+                <h4>Revolving Credit Line</h4>
+                <p>Flexible drawdown structure</p>
+            </div>
+            <div class="objective-card">
+                <div class="icon">📈</div>
+                <h4>Debt Service</h4>
+                <p>Protocol yield + active trading profits</p>
+            </div>
+            <div class="objective-card">
+                <div class="icon">💎</div>
+                <h4>Treasury Strategy</h4>
+                <p>Maintain aggressive Hold on core assets</p>
+            </div>
+            <div class="objective-card">
+                <div class="icon">🌐</div>
+                <h4>Global Expansion</h4>
+                <p>Liquidity for operations & community growth</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Slide 6: Next Steps & CTA -->
+    <div class="page">
+        <div class="page-header">
+            <span class="brand">GOLDBACKBOND</span>
+            <span class="page-num">06</span>
+        </div>
+        
+        <h2>Next Steps</h2>
+        <h3>Phased Onboarding Process</h3>
+        
+        <p>We invite your institution to establish a conservative, phased onboarding process that serves the long-term growth of both Goldbackbond Inc. and your esteemed firm.</p>
+        
+        <div class="cta-section">
+            <h3>🤝 Strategic Partnership Invitation</h3>
+            <p>Let's discuss how we can structure a partnership that benefits both organizations.</p>
+            <a href="https://calendly.com/goldbackbond/30min" class="cta-button" target="_blank">SCHEDULE A CALL →</a>
+        </div>
+        
+        <div class="contact-section">
+            <p class="name">Troy Joyner</p>
+            <p class="title">Chief Executive Officer</p>
+            <p class="company">Ebisu Securities — Broker-Dealer Relations</p>
+            <p class="address">1301 Fannin St #2440, Houston, TX 77002</p>
+        </div>
+    </div>
+</body>
+</html>
