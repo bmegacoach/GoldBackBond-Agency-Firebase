@@ -68,7 +68,7 @@ export const captureLead = functions.https.onRequest(async (req, res) => {
         name: 'sales-deck',
         data: {
           name: data.name,
-          deckUrl: 'https://agency.goldbackbond.com/decks/USDGB-Pre-List-Allocation-Deck.pdf',
+          deckUrl: 'https://agency.goldbackbond.com/decks/sales-deck.html',
         },
       },
     });
